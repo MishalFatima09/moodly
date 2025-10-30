@@ -124,7 +124,7 @@
         android:textSize="18sp"
         android:layout_centerHorizontal="true"
         android:textColor="@color/white"
-        android:background="@drawable/create_button"
+        android:background="@drawable/blue_button"
         android:layout_marginHorizontal="24dp"
         android:layout_marginTop="32dp"
         android:layout_below="@id/input_confirm_password" />
