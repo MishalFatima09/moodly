@@ -7,12 +7,17 @@
     android:layout_height="match_parent"
     tools:context=".SignUp">
 
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="150dp"
+        android:layout_centerInParent="true">
+
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@drawable/moodly_blue"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="100dp"
         android:id="@+id/logo"/>
 
     <TextView
@@ -135,5 +140,7 @@
         android:textSize="14sp"
         android:clickable="true"
         android:focusable="true" />
+
+    </RelativeLayout>
 
 </RelativeLayout>
