@@ -2,4 +2,15 @@
     <string name="app_name">moodly-submission</string>
     <string name="signup_prompt">Dont have an account? <b><i>Sign up</i></b></string>
     <string name="login_prompt">Already have an account? <b><i>Log in</i></b></string>
+    <string name="create_pin">Create Pin</string>
+    <string name="publish">Publish</string>
+    <string name="image">Image</string>
+    <string name="title">Title</string>
+    <string name="add_a_title_for_your_pin">Add a title for your pin</string>
+    <string name="description">Description</string>
+    <string name="describe_what_your_pin_is_about">Describe what your pin is about</string>
+    <string name="keywords">Keywords</string>
+    <string name="add_a_keyword">Add a keyword</string>
+    <string name="save_to_board_optional">Save to Board (optional)</string>
+    <string name="choose_a_board">Choose a board</string>
 </resources>
