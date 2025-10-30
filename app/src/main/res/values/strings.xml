@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">moodly-submission</string>
+    <string name="signup_prompt">Dont have an account? <b><i>Sign up</i></b></string>
+    <string name="login_prompt">Already have an account? <b><i>Log in</i></b></string>
 </resources>
