@@ -12,7 +12,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Moodlysubmission">
         <activity
+            android:name=".SearchFeed"
+            android:exported="false" />
+        <activity
             android:name=".CreatePin"
+            android:exported="false" />
+        <activity
+            android:name=".HomeScreen"
             android:exported="false" />
         <activity
             android:name=".Login"
