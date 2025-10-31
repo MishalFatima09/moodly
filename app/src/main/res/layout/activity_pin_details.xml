@@ -74,7 +74,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:scaleType="centerCrop"
-                            android:src="@color/black" />
+                            android:src="@drawable/placeholder_image_2" />
                     </com.google.android.material.card.MaterialCardView>
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -172,7 +172,7 @@
                             android:id="@+id/user_pfp"
                             android:layout_width="50dp"
                             android:layout_height="match_parent"
-                            android:src="@color/black"
+                            android:src="@drawable/placeholder_image_2"
                             android:padding="5dp"
                             />
                         <RelativeLayout
