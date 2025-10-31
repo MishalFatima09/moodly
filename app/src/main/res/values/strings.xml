@@ -17,4 +17,10 @@
     <string name="follow">Follow</string>
     <string name="your_boards">Your boards</string>
     <string name="create">Create</string>
+    <string name="create_board">Create board</string>
+    <string name="board_name">Board name</string>
+    <string name="give_your_board_a_name">Give your board a name</string>
+    <string name="what_is_your_board_about">What is your board about?</string>
+    <string name="board_tips">Board Tips</string>
+    <string name="board_tips_content">• Use descriptive names to organize your pins\n• Add keywords to make boards easier to find\n• You can change these settings later</string>
 </resources>
