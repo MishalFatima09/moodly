@@ -69,12 +69,15 @@
                         app:cardElevation="0dp"
                         app:strokeWidth="0dp"
                         app:cardPreventCornerOverlap="true">
-                        <com.theophrast.ui.widget.SquareImageView
+                        <ImageView
                             android:id="@+id/pin_image"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:scaleType="centerCrop"
-                            android:src="@drawable/placeholder_image_2" />
+                            android:adjustViewBounds="true"
+                            android:src="@drawable/placeholder_image_6"
+                            android:maxHeight="500dp"
+                            />
                     </com.google.android.material.card.MaterialCardView>
                     <RelativeLayout
                         android:layout_width="match_parent"
