@@ -1,6 +1,9 @@
 package com.moodly.moodly
 
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -15,6 +18,21 @@ class SignUp : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        var loginPrompt = findViewById<TextView>(R.id.text_login_link)
+
+        loginPrompt.setOnClickListener {
+            var intent = Intent(this, SignUp::class.java)
+            startActivity(intent)
+            finish()
+        }
+
+        var createAccount = findViewById<Button>(R.id.button_signup)
+        createAccount.setOnClickListener {
+            var intent = Intent(this, HomeScreen::class.java)
+            startActivity(intent)
+            finish()
         }
     }
 }
