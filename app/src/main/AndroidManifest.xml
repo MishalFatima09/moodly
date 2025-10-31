@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Moodlysubmission">
         <activity
+            android:name=".Boards"
+            android:exported="false" />
+        <activity
             android:name=".SearchFeed"
             android:exported="false" />
         <activity

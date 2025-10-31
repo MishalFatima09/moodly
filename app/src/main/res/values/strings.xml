@@ -15,4 +15,6 @@
     <string name="choose_a_board">Choose a board</string>
     <string name="save">Save</string>
     <string name="follow">Follow</string>
+    <string name="your_boards">Your boards</string>
+    <string name="create">Create</string>
 </resources>
