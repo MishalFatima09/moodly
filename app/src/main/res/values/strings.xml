@@ -13,4 +13,6 @@
     <string name="add_a_keyword">Add a keyword</string>
     <string name="save_to_board_optional">Save to Board (optional)</string>
     <string name="choose_a_board">Choose a board</string>
+    <string name="save">Save</string>
+    <string name="follow">Follow</string>
 </resources>

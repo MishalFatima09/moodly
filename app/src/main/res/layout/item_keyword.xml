@@ -1,0 +1,10 @@
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/keywordText"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/keyword_bg"
+    android:paddingHorizontal="20dp"
+    android:paddingVertical="6dp"
+    android:textColor="@color/grey"
+    android:textSize="12sp"
+    android:layout_margin="4dp" />

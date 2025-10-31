@@ -45,4 +45,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    implementation("com.github.Theophrast:SquareImageView:1.0.1")
+    implementation("de.hdodenhof:circleimageview:3.1.0")
+    implementation("com.google.android.flexbox:flexbox:3.0.0")
 }
