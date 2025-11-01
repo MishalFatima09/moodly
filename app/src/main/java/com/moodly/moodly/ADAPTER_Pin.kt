@@ -5,11 +5,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
-import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 
-class ADAPTER_Pin(private val images: List<Int>) :
+class ADAPTER_Pin(private val pins: List<DATA_Pin>) :
     RecyclerView.Adapter<ADAPTER_Pin.PinViewHolder>() {
 
     inner class PinViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -18,14 +15,14 @@ class ADAPTER_Pin(private val images: List<Int>) :
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PinViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.pin_item, parent, false)
+            .inflate(R.layout.item_pin, parent, false)
         return PinViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: PinViewHolder, position: Int) {
-        val imageResource = images[position]
-        holder.postImage.setImageResource(imageResource)
+        val pin = pins[position]
+        holder.postImage.setImageResource(pin.imageResource)
     }
 
-    override fun getItemCount() = images.size
+    override fun getItemCount() = pins.size
 }

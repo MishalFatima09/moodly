@@ -121,7 +121,7 @@
                 app:layoutManager="androidx.recyclerview.widget.StaggeredGridLayoutManager"
                 app:spanCount="2"
                 tools:itemCount="4"
-                tools:listitem="@layout/pin_item" />
+                tools:listitem="@layout/item_pin" />
 
         </LinearLayout>
     </ScrollView>

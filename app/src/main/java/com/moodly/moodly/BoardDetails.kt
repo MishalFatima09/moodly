@@ -2,7 +2,6 @@ package com.moodly.moodly
 
 import android.content.res.Configuration
 import android.os.Bundle
-import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -35,18 +34,18 @@ class BoardDetails : AppCompatActivity() {
         val layoutManager = StaggeredGridLayoutManager(getSpanCount(), StaggeredGridLayoutManager.VERTICAL)
         recyclerView.layoutManager = layoutManager
         recyclerView.addItemDecoration(UTILITY_SpacingItemDecorator(2))
-        val images = listOf(
-            R.drawable.placeholder_image,
-            R.drawable.placeholder_image_2,
-            R.drawable.placeholder_image_3,
-            R.drawable.placeholder_image_4,
-            R.drawable.placeholder_image_5,
-            R.drawable.placeholder_image_6,
-            R.drawable.placeholder_image_7,
-            R.drawable.placeholder_image_8,
-            R.drawable.placeholder_image_9
-            )
-        adapter = ADAPTER_Pin(images)
+        val pins = listOf(
+            DATA_Pin(R.drawable.placeholder_image),
+            DATA_Pin(R.drawable.placeholder_image_2),
+            DATA_Pin(R.drawable.placeholder_image_3),
+            DATA_Pin(R.drawable.placeholder_image_4),
+            DATA_Pin(R.drawable.placeholder_image_5),
+            DATA_Pin(R.drawable.placeholder_image_6),
+            DATA_Pin(R.drawable.placeholder_image_7),
+            DATA_Pin(R.drawable.placeholder_image_8),
+            DATA_Pin(R.drawable.placeholder_image_9)
+        )
+        adapter = ADAPTER_Pin(pins)
         recyclerView.adapter = adapter
     }
 
