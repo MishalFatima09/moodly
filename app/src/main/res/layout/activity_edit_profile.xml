@@ -1,0 +1,232 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:fillViewport="true">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <!-- Moodly Logo -->
+        <View
+            android:id="@+id/moodly_logo"
+            android:layout_width="180dp"
+            android:layout_height="60dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="20dp"
+            android:background="@drawable/moodly_blue" />
+
+        <!-- Profile Picture Container -->
+        <RelativeLayout
+            android:id="@+id/profile_picture_container"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_below="@id/moodly_logo"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="24dp">
+
+            <ImageView
+                android:id="@+id/profile_image"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:src="@drawable/default_profile"
+                android:scaleType="centerCrop"
+                android:background="@drawable/circle_image_bg" />
+
+        </RelativeLayout>
+
+        <!-- Change Picture Text -->
+        <TextView
+            android:id="@+id/change_picture_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/profile_picture_container"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="8dp"
+            android:text="Change Picture"
+            android:textColor="#000000"
+            android:textSize="12sp" />
+
+        <!-- Username Label -->
+        <TextView
+            android:id="@+id/username_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/change_picture_text"
+            android:layout_alignParentLeft="true"
+            android:layout_marginTop="24dp"
+            android:text="Username"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Username Input -->
+        <EditText
+            android:id="@+id/username_input"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_below="@id/username_label"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/input_background"
+            android:hint="gaydads"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:textSize="14sp"
+            android:textColor="#000000"
+            android:textColorHint="#999999" />
+
+        <!-- Nickname Label -->
+        <TextView
+            android:id="@+id/nickname_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/username_input"
+            android:layout_alignParentLeft="true"
+            android:layout_marginTop="16dp"
+            android:text="Nickname"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Nickname Input -->
+        <EditText
+            android:id="@+id/nickname_input"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_below="@id/nickname_label"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/input_background"
+            android:hint="AlooKabab"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:textSize="14sp"
+            android:textColor="#000000"
+            android:textColorHint="#999999" />
+
+        <!-- Email Label -->
+        <TextView
+            android:id="@+id/email_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/nickname_input"
+            android:layout_alignParentLeft="true"
+            android:layout_marginTop="16dp"
+            android:text="Email"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Email Input -->
+        <EditText
+            android:id="@+id/email_input"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_below="@id/email_label"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/input_background"
+            android:hint="gaydads@nu.edu.pk"
+            android:inputType="textEmailAddress"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:textSize="14sp"
+            android:textColor="#000000"
+            android:textColorHint="#999999" />
+
+        <!-- Phone num Label -->
+        <TextView
+            android:id="@+id/phone_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/email_input"
+            android:layout_alignParentLeft="true"
+            android:layout_marginTop="16dp"
+            android:text="Phone num"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Phone Input -->
+        <EditText
+            android:id="@+id/phone_input"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_below="@id/phone_label"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/input_background"
+            android:hint="+328548871254"
+            android:inputType="phone"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:textSize="14sp"
+            android:textColor="#000000"
+            android:textColorHint="#999999" />
+
+        <!-- Password Label -->
+        <TextView
+            android:id="@+id/password_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/phone_input"
+            android:layout_alignParentLeft="true"
+            android:layout_marginTop="16dp"
+            android:text="Password"
+            android:textColor="#000000"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <!-- Password Input with Eye Icon -->
+        <RelativeLayout
+            android:id="@+id/password_container"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_below="@id/password_label"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/input_background">
+
+            <EditText
+                android:id="@+id/password_input"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_toLeftOf="@id/password_toggle"
+                android:background="@android:color/transparent"
+                android:hint="Change Password"
+                android:inputType="textPassword"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:textSize="14sp"
+                android:textColor="#000000"
+                android:textColorHint="#CCCCCC" />
+
+            <ImageView
+                android:id="@+id/password_toggle"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginRight="12dp"
+                android:src="@drawable/ic_eye"
+                android:contentDescription="Toggle password visibility" />
+
+        </RelativeLayout>
+
+        <!-- Update Button -->
+        <Button
+            android:id="@+id/update_button"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_below="@id/password_container"
+            android:layout_marginTop="32dp"
+            android:layout_marginBottom="24dp"
+            android:background="@drawable/button_background"
+            android:text="Update"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </RelativeLayout>
+
+</ScrollView>

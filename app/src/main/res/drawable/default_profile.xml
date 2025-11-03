@@ -1,0 +1,10 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <!-- Placeholder profile image - replace with actual image -->
+    <path
+        android:fillColor="@color/blue"
+        android:pathData="M60,0C26.86,0 0,26.86 0,60s26.86,60 60,60 60,-26.86 60,-60S93.14,0 60,0zM60,18c8.28,0 15,6.72 15,15s-6.72,15 -15,15 -15,-6.72 -15,-15 6.72,-15 15,-15zM60,103.6c-15,0 -28.22,-7.66 -36,-19.28 0.1,-11.88 24,-18.42 36,-18.42s35.9,6.54 36,18.42c-7.78,11.62 -21,19.28 -36,19.28z"/>
+</vector>
