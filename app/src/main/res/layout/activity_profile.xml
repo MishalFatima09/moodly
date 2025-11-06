@@ -2,7 +2,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF">
+    android:background="#FFFFFF"
+    android:id="@+id/main">
 
     <!-- Top App Bar -->
     <RelativeLayout
@@ -68,7 +69,7 @@
                 android:layout_width="120dp"
                 android:layout_height="120dp">
 
-                <ImageView
+                <de.hdodenhof.circleimageview.CircleImageView
                     android:id="@+id/profile_image"
                     android:layout_width="120dp"
                     android:layout_height="120dp"

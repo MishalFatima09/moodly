@@ -2,6 +2,7 @@ package com.moodly.moodly
 
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -11,7 +12,6 @@ import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class PinDetails : AppCompatActivity() {
-    var keywords = ArrayList<String>()
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -21,9 +21,10 @@ class PinDetails : AppCompatActivity() {
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        setupNavigations()
 
         //flex box container that stores keywords
-        //Fill this using key words list
+        var keywords = ArrayList<String>()
         keywords.add("Kuromi")
         keywords.add("Sanrio")
         keywords.add("Nagasaki")
@@ -36,6 +37,13 @@ class PinDetails : AppCompatActivity() {
                 .inflate(R.layout.item_keyword, keywordsContainer, false) as TextView
             chipView.text = "#$keyword"
             keywordsContainer.addView(chipView)
+        }
+    }
+    private fun setupNavigations()
+    {
+        var backBtn = findViewById<ImageView>(R.id.btn_back)
+        backBtn.setOnClickListener {
+            finish()
         }
     }
 }

@@ -1,7 +1,9 @@
 package com.moodly.moodly
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -10,13 +12,28 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 class HomeScreen : AppCompatActivity() {
     lateinit var recyclerView: RecyclerView
     lateinit var adapter: ADAPTER_Pin
+    lateinit var bottomNav : BottomNavigationView
+    lateinit var searchbar : EditText
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home_screen)
 
-        setupRecyclerView()
-        var bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        searchbar = findViewById<EditText>(R.id.search_bar)
+
         bottomNav.selectedItemId = R.id.nav_home
+
+        setupRecyclerView()
+        setupNavigations()
+    }
+    override fun onStart() {
+        super.onStart()
+        bottomNav.selectedItemId = R.id.nav_home
+    }
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        bottomNav.selectedItemId = R.id.nav_home
+        bottomNav.menu.findItem(R.id.nav_home).isChecked = true
     }
     private fun setupRecyclerView()
     {
@@ -37,6 +54,15 @@ class HomeScreen : AppCompatActivity() {
         )
         adapter = ADAPTER_Pin(pins)
         recyclerView.adapter = adapter
+    }
+    private fun setupNavigations()
+    {
+        BottomNavManager.setup(this, bottomNav)
+        searchbar.setOnClickListener {
+            val intent = Intent(this, SearchFeed::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            startActivity(intent)
+        }
     }
     private fun getSpanCount(): Int {
         return if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 3 else 2

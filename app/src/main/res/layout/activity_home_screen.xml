@@ -26,6 +26,7 @@
             android:textColor="@color/blue"/>
 
         <EditText
+            android:id="@+id/search_bar"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="wrap_content"
@@ -35,7 +36,9 @@
             android:background="@drawable/rounded_search"
             android:drawableStart="@drawable/icon_search"
             android:drawablePadding="8dp"
-            android:inputType="text" />
+            android:inputType="text"
+            android:focusable="false"
+            android:clickable="true"/>
     </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView

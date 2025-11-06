@@ -23,14 +23,14 @@ class SignUp : AppCompatActivity() {
         var loginPrompt = findViewById<TextView>(R.id.text_login_link)
 
         loginPrompt.setOnClickListener {
-            var intent = Intent(this, SignUp::class.java)
+            var intent = Intent(this, Login::class.java)
             startActivity(intent)
             finish()
         }
 
         var createAccount = findViewById<Button>(R.id.button_signup)
         createAccount.setOnClickListener {
-            var intent = Intent(this, HomeScreen::class.java)
+            var intent = Intent(this, Login::class.java)
             startActivity(intent)
             finish()
         }

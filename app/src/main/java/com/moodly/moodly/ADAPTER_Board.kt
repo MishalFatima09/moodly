@@ -1,5 +1,6 @@
 package com.moodly.moodly
 
+import android.content.Intent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +26,11 @@ class ADAPTER_Board(private val boards: List<DATA_Board>) :
         val board = boards[position]
         holder.name.text = board.title
         holder.count.text = board.pinCount.toString()
+        holder.itemView.setOnClickListener {
+            val context = holder.itemView.context
+            val intent = Intent(context, BoardDetails::class.java)
+            context.startActivity(intent)
+        }
     }
 
     override fun getItemCount() = boards.size

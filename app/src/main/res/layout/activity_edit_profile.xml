@@ -3,7 +3,8 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FFFFFF"
-    android:fillViewport="true">
+    android:fillViewport="true"
+    android:id="@+id/main">
 
     <RelativeLayout
         android:layout_width="match_parent"
@@ -29,7 +30,7 @@
             android:layout_centerHorizontal="true"
             android:layout_marginTop="24dp">
 
-            <ImageView
+            <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/profile_image"
                 android:layout_width="120dp"
                 android:layout_height="120dp"

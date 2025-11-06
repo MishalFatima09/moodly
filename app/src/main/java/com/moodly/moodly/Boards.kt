@@ -1,7 +1,10 @@
 package com.moodly.moodly
 
+import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
+import android.widget.ImageView
+import android.widget.LinearLayout
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -12,6 +15,7 @@ import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class Boards : AppCompatActivity() {
     lateinit var boards_rv : RecyclerView
+    lateinit var bottomNav : BottomNavigationView
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -22,9 +26,9 @@ class Boards : AppCompatActivity() {
             insets
         }
 
-        //set current selected tab to boards in bottom nav
-        val bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
+        bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         bottomNav.selectedItemId = R.id.nav_boards
+        setupNavigations()
 
         //recycler view
         boards_rv = findViewById<RecyclerView>(R.id.boards_rv)
@@ -37,5 +41,24 @@ class Boards : AppCompatActivity() {
             DATA_Board("Vroom", 46)
         )
         boards_rv.adapter = ADAPTER_Board(boards)
+    }
+    override fun onStart() {
+        super.onStart()
+        bottomNav.selectedItemId = R.id.nav_boards
+    }
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        bottomNav.selectedItemId = R.id.nav_boards
+        bottomNav.menu.findItem(R.id.nav_boards).isChecked = true
+    }
+    private fun setupNavigations()
+    {
+        BottomNavManager.setup(this, bottomNav)
+        val btnCreate = findViewById<LinearLayout>(R.id.btn_create)
+        btnCreate.setOnClickListener {
+            val intent = Intent(this, CreateBoard::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
+            startActivity(intent)
+        }
     }
 }
