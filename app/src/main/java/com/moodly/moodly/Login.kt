@@ -40,7 +40,6 @@ class Login : AppCompatActivity() {
         forgot.setOnClickListener {
             var intent = Intent(this, ForgotPassword::class.java)
             startActivity(intent)
-            finish()
         }
 
     }
