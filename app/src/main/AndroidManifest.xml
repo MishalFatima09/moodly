@@ -14,6 +14,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Moodlysubmission">
         <activity
+            android:name=".ForgotPassword"
+            android:exported="false" />
+        <activity
             android:name=".Notifications"
             android:exported="false" />
         <activity

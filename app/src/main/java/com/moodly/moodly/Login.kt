@@ -36,5 +36,12 @@ class Login : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+        var forgot = findViewById<TextView>(R.id.forgot)
+        forgot.setOnClickListener {
+            var intent = Intent(this, ForgotPassword::class.java)
+            startActivity(intent)
+            finish()
+        }
+
     }
 }
