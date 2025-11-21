@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.moodly.moodly" />
+                  <option name="mobileSdkAppId" value="1:23048846914:android:8686203ed8ac90ae50b7db" />
+                  <option name="projectId" value="moodly-d405c" />
+                  <option name="projectNumber" value="23048846914" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
