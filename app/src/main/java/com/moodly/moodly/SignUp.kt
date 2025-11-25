@@ -2,7 +2,9 @@ package com.moodly.moodly
 
 import android.content.Intent
 import android.os.Bundle
+import android.text.InputType
 import android.util.Log
+import android.view.MotionEvent
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
@@ -16,30 +18,27 @@ import com.google.firebase.auth.FirebaseAuth
 class SignUp : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
+    lateinit var createAccountButton: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up)
 
-        // Initialize Firebase Auth
         auth = FirebaseAuth.getInstance()
-
-        // UI References (Changed TextView to EditText so we can read user input)
-        val createAccountButton = findViewById<Button>(R.id.button_signup)
+        createAccountButton = findViewById<Button>(R.id.button_signup)
         val goToLoginButton = findViewById<TextView>(R.id.text_login_link)
-
         val nameInput = findViewById<EditText>(R.id.input_name)
         val emailInput = findViewById<EditText>(R.id.input_email)
         val passwordInput = findViewById<EditText>(R.id.input_password)
         val confirmPasswordInput = findViewById<EditText>(R.id.input_confirm_password)
+        setupPasswordVisibility(passwordInput)
+        setupPasswordVisibility(confirmPasswordInput)
 
-        // Handle "Go to Login" click
         goToLoginButton.setOnClickListener {
             startActivity(Intent(this, Login::class.java))
             finish()
         }
 
-        // Handle "Create Account" click
         createAccountButton.setOnClickListener {
             val fullName = nameInput.text.toString().trim()
             val email = emailInput.text.toString().trim()
@@ -63,6 +62,8 @@ class SignUp : AppCompatActivity() {
             }
 
             // Create User in Firebase
+            createAccountButton.isEnabled = false
+            createAccountButton.text = "Creating Account..."
             auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this) { task ->
                     if (task.isSuccessful) {
@@ -75,6 +76,8 @@ class SignUp : AppCompatActivity() {
                         }
                     } else {
                         // Firebase Failed
+                        createAccountButton.isEnabled = true
+                        createAccountButton.text = "Create Account"
                         Log.e("SignUp", "Firebase Auth Failed", task.exception)
                         Toast.makeText(this, "Sign Up Failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
                     }
@@ -90,6 +93,7 @@ class SignUp : AppCompatActivity() {
         val query = "INSERT INTO users (user_id, username, email, full_name) VALUES (?, ?, ?, ?)"
         val params = listOf(uid, username, email, fullName)
 
+        createAccountButton.text = "Saving info..."
         OnlineDbHelper.executeQuery(query, params) { response, error ->
             if(error != null) {
                 Log.e("SignUp", "Database Insert Error", error)
@@ -97,9 +101,9 @@ class SignUp : AppCompatActivity() {
             }
             if (response?.status == 1) {
                 // Both Firebase and Database are updated
-                Log.d("SignUp", "User saved to Supabase!")
+                Log.d("SignUp", "User saved to Supabase")
                 Toast.makeText(this, "Account created successfully.", Toast.LENGTH_LONG).show()
-                // Navigate to Login
+
                 val intent = Intent(this, Login::class.java)
                 intent.putExtra("email", email)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -111,6 +115,8 @@ class SignUp : AppCompatActivity() {
                 if (user == null) {
                     Log.e("SignUp", "Database Insert Failed and no firebase user to delete: ${response?.error?.message ?: error?.message}")
                     Toast.makeText(this, "Account created but database failed.", Toast.LENGTH_LONG).show()
+                    createAccountButton.text = "Create Account"
+                    createAccountButton.isEnabled = true
                     return@executeQuery
                 }
 
@@ -118,14 +124,45 @@ class SignUp : AppCompatActivity() {
                     if (deleteTask.isSuccessful) {
                         Log.d("SignUp", "Firebase user deleted after DB failure")
                         Toast.makeText(this, "Account creation rolled back due to database error.", Toast.LENGTH_LONG).show()
+                        createAccountButton.text = "Create Account"
+                        createAccountButton.isEnabled = true
                         auth.signOut()
                     } else {
                         Log.e("SignUp", "Failed to delete firebase user", deleteTask.exception)
                         Toast.makeText(this, "Account created but database failed. Please try logging out and removing the account from settings, or contact support.", Toast.LENGTH_LONG).show()
+                        createAccountButton.text = "Create Account"
+                        createAccountButton.isEnabled = true
                         auth.signOut()
                     }
                 }
             }
+        }
+    }
+    fun setupPasswordVisibility(editText: EditText) {
+        editText.setOnTouchListener { v, event ->
+            val DRAWABLE_RIGHT = 2
+
+            // Check if the click action is "UP" (finger lifted)
+            if (event.action == MotionEvent.ACTION_UP) {
+                // Check if touch point is within the bounds of the right drawable
+                if (event.rawX >= (editText.right - editText.compoundPaddingEnd)) {
+
+                    // Toggle Logic
+                    val selectionStart = editText.selectionStart // Save cursor position
+
+                    if (editText.inputType == (InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD)) {
+                        // Show Password
+                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+                    } else {
+                        // Hide Password
+                        editText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+                    }
+                    editText.setSelection(selectionStart)
+                    return@setOnTouchListener true
+                }
+            }
+            // Return false to let normal typing clicks pass through
+            return@setOnTouchListener false
         }
     }
 }
