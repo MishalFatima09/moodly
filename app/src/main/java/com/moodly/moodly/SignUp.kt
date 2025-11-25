@@ -1,5 +1,7 @@
 package com.moodly.moodly
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.InputType
@@ -104,6 +106,17 @@ class SignUp : AppCompatActivity() {
                 Log.d("SignUp", "User saved to Supabase")
                 Toast.makeText(this, "Account created successfully.", Toast.LENGTH_LONG).show()
 
+                // Save to user data to prefs
+                val prefs = getSharedPreferences(Globals.prefs, Context.MODE_PRIVATE)
+                val editor = prefs.edit()
+                editor.putString("user_id", uid)
+                editor.putString("username", username)
+                editor.putString("email", email)
+                editor.putString("full_name", fullName)
+                editor.putString("phone_number", "")
+                editor.putString("profile_pic_url", "")
+                editor.apply()
+
                 val intent = Intent(this, Login::class.java)
                 intent.putExtra("email", email)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -138,6 +151,7 @@ class SignUp : AppCompatActivity() {
             }
         }
     }
+    @SuppressLint("ClickableViewAccessibility")
     fun setupPasswordVisibility(editText: EditText) {
         editText.setOnTouchListener { v, event ->
             val DRAWABLE_RIGHT = 2
