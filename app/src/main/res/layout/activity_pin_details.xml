@@ -74,7 +74,7 @@
                             android:layout_height="wrap_content"
                             android:scaleType="centerCrop"
                             android:adjustViewBounds="true"
-                            android:src="@drawable/placeholder_image_6"
+                            android:src="@color/black"
                             android:maxHeight="500dp"
                             />
                     </com.google.android.material.card.MaterialCardView>
@@ -95,6 +95,7 @@
                             android:orientation="horizontal"
                             >
                             <ImageView
+                                android:id="@+id/like_icon"
                                 android:layout_width="18dp"
                                 android:layout_height="18dp"
                                 android:src="@drawable/icon_heart"
@@ -104,9 +105,10 @@
                                 android:layout_marginEnd="5dp"
                                 />
                             <TextView
+                                android:id="@+id/tv_like_count"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="1237"
+                                android:text="0"
                                 android:textColor="@color/grey"
                                 android:textStyle="bold"
                                 android:layout_gravity="center_vertical"
@@ -158,12 +160,19 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:id="@+id/tv_caption"
-                        android:text="Heelo darkness my old friend"
-                        android:layout_marginVertical="10dp"
+                        android:id="@+id/tv_title"
+                        android:layout_marginTop="10dp"
                         android:textStyle="bold"
                         android:textSize="16sp"
                         android:textColor="@color/blue"
+                        />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/tv_description"
+                        android:textSize="12sp"
+                        android:textColor="@color/grey"
+                        android:layout_marginBottom="10dp"
                         />
                     <RelativeLayout
                         android:layout_width="match_parent"
@@ -174,7 +183,7 @@
                             android:id="@+id/user_pfp"
                             android:layout_width="50dp"
                             android:layout_height="match_parent"
-                            android:src="@drawable/placeholder_image_2"
+                            android:src="@color/black"
                             android:padding="5dp"
                             />
                         <RelativeLayout
@@ -187,7 +196,6 @@
                                 android:id="@+id/tv_username"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="mehdigandabacha"
                                 android:textColor="@color/black"
                                 />
                             <TextView
@@ -195,41 +203,9 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_below="@id/tv_username"
-                                android:text="Posted on 2025-09-21"
                                 android:textColor="@color/grey"
                                 />
                         </RelativeLayout>
-                        <LinearLayout
-                            android:id="@+id/btn_follow"
-                            android:layout_width="wrap_content"
-                            android:layout_height="match_parent"
-                            android:layout_marginVertical="8dp"
-                            android:background="@drawable/rounded_sides_light_grey_bg_blue_stroke"
-                            android:layout_alignParentEnd="true"
-                            android:elevation="2dp"
-                            android:orientation="horizontal"
-                            >
-                            <ImageView
-                                android:layout_width="10dp"
-                                android:layout_height="10dp"
-                                android:src="@drawable/icon_plus"
-                                app:tint="@color/blue"
-                                android:layout_gravity="center_vertical"
-                                android:layout_marginStart="15dp"
-                                android:layout_marginEnd="5dp"
-                                />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/follow"
-                                android:textColor="@color/blue"
-                                android:textStyle="bold"
-                                android:layout_gravity="center_vertical"
-                                android:layout_marginEnd="15dp"
-                                android:textSize="16sp"
-                                />
-                        </LinearLayout>
-
                     </RelativeLayout>
                     <TextView
                         android:id="@+id/tv_keywords"

@@ -53,6 +53,8 @@ class ADAPTER_Pin(private val pins: List<DATA_Pin>) :
         holder.itemView.setOnClickListener {
             val intent = Intent(context, PinDetails::class.java)
             intent.putExtra("pin_id", pin.pinId)
+            intent.putExtra("image_url", pin.imageUrl)
+            intent.putExtra("aspect_ratio", pin.aspectRatio)
             context.startActivity(intent)
         }
     }
