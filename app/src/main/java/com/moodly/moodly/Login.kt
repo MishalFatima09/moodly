@@ -126,18 +126,22 @@ class Login : AppCompatActivity() {
                     val userRow = rows[0]
                     saveToPrefs(userRow)
                     Log.d("Login", "User data saved to Prefs")
+                    navigateToHome()
                 } else {
                     Log.w("Login", "User not found in SQL database")
-                    saveBasicPrefs(userId)
+                    Toast.makeText(this, "Profile doesn't exist in database.", Toast.LENGTH_LONG).show()
+                    FirebaseAuth.getInstance().signOut()
+                    loginButton.isEnabled = true
+                    loginButton.text = "Login"
                 }
-                navigateToHome()
+
             } else {
                 // Network Error or Server Error
                 Log.e("Login", "Failed to fetch user data: ${error?.message}")
-                Toast.makeText(this, "Login successful, but couldn't load profile.", Toast.LENGTH_LONG).show()
-                // Still let them in
-                saveBasicPrefs(userId)
-                navigateToHome()
+                Toast.makeText(this, "Couldn't load profile.", Toast.LENGTH_LONG).show()
+                FirebaseAuth.getInstance().signOut()
+                loginButton.isEnabled = true
+                loginButton.text = "Login"
             }
         }
     }
@@ -152,15 +156,6 @@ class Login : AppCompatActivity() {
         editor.putString("full_name", data["full_name"]?.toString() ?: "")
         editor.putString("phone_number", data["phone_number"]?.toString() ?: "")
         editor.putString("profile_pic_url", data["profile_pic_url"]?.toString() ?: "")
-        editor.apply()
-    }
-
-    private fun saveBasicPrefs(uid: String) {
-        val prefs = getSharedPreferences(Globals.prefs, Context.MODE_PRIVATE)
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        val editor = prefs.edit()
-        editor.putString("user_id", uid)
-        editor.putString("email", currentUser?.email ?: "")
         editor.apply()
     }
 
