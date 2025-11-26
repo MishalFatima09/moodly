@@ -234,7 +234,15 @@
                             android:padding="12dp"
                             android:src="@drawable/icon_plus" />
                     </RelativeLayout>
-
+                    <com.google.android.flexbox.FlexboxLayout
+                        android:id="@+id/keywords_container"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:flexWrap="wrap"
+                        android:layout_marginVertical="5dp"
+                        app:justifyContent="flex_start"
+                        app:alignItems="center"
+                        />
                     <!-- Save to Board Section -->
                     <TextView
                         android:id="@+id/label_board"

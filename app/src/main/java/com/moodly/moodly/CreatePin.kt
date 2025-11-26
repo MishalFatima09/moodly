@@ -13,6 +13,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import java.io.InputStream
 
@@ -24,9 +25,12 @@ class CreatePin : AppCompatActivity() {
     private lateinit var placeholderElements: LinearLayout
     private lateinit var imagePreview: ImageView
     private lateinit var btnPublish: TextView
+    private lateinit var btnAddKeyword: ImageView
     private lateinit var edittextTitle: EditText
     private lateinit var edittextDescription: EditText
     private lateinit var edittextKeyword: EditText
+    private lateinit var keywordsContainer: FlexboxLayout
+    var keywords = ArrayList<String>()
 
     // Pin Data
     private var selectedImageUri: Uri? = null
@@ -74,9 +78,11 @@ class CreatePin : AppCompatActivity() {
         placeholderElements = findViewById(R.id.image_upload_placeholder_elements)
         imagePreview = findViewById(R.id.image_preview)
         btnPublish = findViewById(R.id.btn_publish)
+        btnAddKeyword = findViewById(R.id.btn_add_keyword)
         edittextTitle = findViewById(R.id.edittext_title)
         edittextDescription = findViewById(R.id.edittext_description)
         edittextKeyword = findViewById(R.id.edittext_keyword)
+        keywordsContainer= findViewById(R.id.keywords_container)
 
         // Add listeners
         setupNavigations()
@@ -108,6 +114,20 @@ class CreatePin : AppCompatActivity() {
         imgUploadContainer.setOnClickListener {
             getContent.launch("image/*")
         }
+
+        btnAddKeyword.setOnClickListener {
+            addKeyword()
+        }
+    }
+    private fun addKeyword() {
+        val keywordText = edittextKeyword.text.toString().trim()
+        if (keywordText.isNotEmpty()) {
+            keywords.add(keywordText)
+            val chipView = layoutInflater.inflate(R.layout.item_keyword, keywordsContainer, false) as TextView
+            chipView.text = "#$keywordText"
+            keywordsContainer.addView(chipView)
+            edittextKeyword.text.clear()
+        }
     }
 
 
@@ -134,7 +154,6 @@ class CreatePin : AppCompatActivity() {
     private fun uploadPin() {
         val title = edittextTitle.text.toString().trim()
         val description = edittextDescription.text.toString().trim()
-        val keywords = edittextKeyword.text.toString().trim()
 
         val prefs = getSharedPreferences(Globals.prefs, MODE_PRIVATE)
         val userId = prefs.getString("user_id", null)
@@ -153,7 +172,7 @@ class CreatePin : AppCompatActivity() {
         }
 
         // Step 1: Upload Image
-        OnlineDbHelper.uploadImage(pinImageBase64!!, compressionThresholdInBytes = 1_000_000) { imageUrl, exception ->
+        OnlineDbHelper.uploadImage(pinImageBase64!!) { imageUrl, exception ->
             if (exception != null || imageUrl == null) {
                 progressDialog.dismiss()
                 Toast.makeText(this, "Failed to upload image: ${exception?.message}", Toast.LENGTH_LONG).show()
@@ -178,19 +197,33 @@ class CreatePin : AppCompatActivity() {
         userId: String,
         title: String,
         description: String,
-        keywords: String,
+        keywords: List<String>,
         imageUrl: String,
         onComplete: (Boolean, String?) -> Unit
     ) {
+        // Join list into a single comma seperated string
+        val finalKeywords = keywords.joinToString("|")
 
-        val aspectRatio = 1.0
+        val aspectRatio = try {
+            val decodedBytes = android.util.Base64.decode(pinImageBase64, android.util.Base64.DEFAULT)
+            val options = android.graphics.BitmapFactory.Options()
+            options.inJustDecodeBounds = true
+            android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, options)
 
+            if (options.outWidth > 0) {
+                options.outHeight.toFloat() / options.outWidth.toFloat()
+            } else {
+                1.0f
+            }
+        } catch (e: Exception) {
+            1.0f
+        }
         val query = """
             INSERT INTO pins (user_id, title, description, keywords, image_url, aspect_ratio) 
             VALUES (?, ?, ?, ?, ?, ?)
         """.trimIndent()
 
-        val params = listOf(userId, title, description, keywords, imageUrl, aspectRatio)
+        val params = listOf(userId, title, description, finalKeywords, imageUrl, aspectRatio)
 
         OnlineDbHelper.executeQuery(query, params) { response, exception ->
             if (exception != null) {
