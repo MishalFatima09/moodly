@@ -28,23 +28,23 @@ class BoardDetails : AppCompatActivity() {
     }
     private fun setupRecyclerView()
     {
-        recyclerView = findViewById(R.id.pins_rv)
-        val layoutManager = StaggeredGridLayoutManager(getSpanCount(), StaggeredGridLayoutManager.VERTICAL)
-        recyclerView.layoutManager = layoutManager
-        recyclerView.addItemDecoration(UTILITY_SpacingItemDecorator(2))
-        val pins = listOf(
-            DATA_Pin(R.drawable.placeholder_image),
-            DATA_Pin(R.drawable.placeholder_image_2),
-            DATA_Pin(R.drawable.placeholder_image_3),
-            DATA_Pin(R.drawable.placeholder_image_4),
-            DATA_Pin(R.drawable.placeholder_image_5),
-            DATA_Pin(R.drawable.placeholder_image_6),
-            DATA_Pin(R.drawable.placeholder_image_7),
-            DATA_Pin(R.drawable.placeholder_image_8),
-            DATA_Pin(R.drawable.placeholder_image_9)
-        )
-        adapter = ADAPTER_Pin(pins)
-        recyclerView.adapter = adapter
+//        recyclerView = findViewById(R.id.pins_rv)
+//        val layoutManager = StaggeredGridLayoutManager(getSpanCount(), StaggeredGridLayoutManager.VERTICAL)
+//        recyclerView.layoutManager = layoutManager
+//        recyclerView.addItemDecoration(UTILITY_SpacingItemDecorator(2))
+//        val pins = listOf(
+//            DATA_Pin(R.drawable.placeholder_image),
+//            DATA_Pin(R.drawable.placeholder_image_2),
+//            DATA_Pin(R.drawable.placeholder_image_3),
+//            DATA_Pin(R.drawable.placeholder_image_4),
+//            DATA_Pin(R.drawable.placeholder_image_5),
+//            DATA_Pin(R.drawable.placeholder_image_6),
+//            DATA_Pin(R.drawable.placeholder_image_7),
+//            DATA_Pin(R.drawable.placeholder_image_8),
+//            DATA_Pin(R.drawable.placeholder_image_9)
+//        )
+//        adapter = ADAPTER_Pin(pins)
+//        recyclerView.adapter = adapter
     }
     private fun setupNavigations() {
         var backBtn = findViewById<ImageView>(R.id.btn_back)
