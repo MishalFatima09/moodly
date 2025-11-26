@@ -79,6 +79,8 @@ class CreatePin : AppCompatActivity() {
         edittextKeyword = findViewById(R.id.edittext_keyword)
         keywordsContainer= findViewById(R.id.keywords_container)
 
+        bottomNav.selectedItemId = R.id.nav_create
+
         // Add listeners
         setupNavigations()
         setupPublishButton()
