@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -20,6 +21,7 @@ class HomeScreen : AppCompatActivity() {
     lateinit var bottomNav : BottomNavigationView
     lateinit var searchbar : EditText
     lateinit var nothingToShowText : TextView
+    lateinit var progressBar : ProgressBar
     lateinit var user_id: String
     lateinit var prefs: SharedPreferences
     var pins = ArrayList<DATA_Pin>()
@@ -31,6 +33,7 @@ class HomeScreen : AppCompatActivity() {
         bottomNav = findViewById<BottomNavigationView>(R.id.bottom_navigation)
         searchbar = findViewById<EditText>(R.id.search_bar)
         nothingToShowText = findViewById<TextView>(R.id.nothing_to_show_text)
+        progressBar = findViewById<ProgressBar>(R.id.progress_bar)
         prefs = getSharedPreferences(Globals.prefs, MODE_PRIVATE)
 
         user_id = prefs.getString("user_id", "") ?: ""
@@ -80,6 +83,10 @@ class HomeScreen : AppCompatActivity() {
     }
 
     private fun loadPins() {
+        progressBar.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
+        nothingToShowText.visibility = View.GONE
+
         val query = "SELECT pin_id, image_url, aspect_ratio FROM pins WHERE user_id != ? ORDER BY created_at DESC LIMIT 100"
         val params = listOf(user_id)
 
@@ -87,6 +94,7 @@ class HomeScreen : AppCompatActivity() {
             if (error != null) {
                 Log.e("HomeScreen", "Error loading pins: $error")
                 Toast.makeText(this, "Error loading pins ", Toast.LENGTH_LONG).show()
+                progressBar.visibility = View.GONE
                 nothingToShowText.visibility = View.VISIBLE
                 recyclerView.visibility = View.GONE
                 return@executeQuery
@@ -113,6 +121,7 @@ class HomeScreen : AppCompatActivity() {
                 }
                 adapter.notifyDataSetChanged()
 
+                progressBar.visibility = View.GONE
                 if (pins.isEmpty()) {
                     nothingToShowText.visibility = View.VISIBLE
                     recyclerView.visibility = View.GONE
