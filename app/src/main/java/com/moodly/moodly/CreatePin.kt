@@ -1,5 +1,9 @@
 package com.moodly.moodly
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
@@ -15,6 +19,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
 
@@ -41,29 +46,19 @@ class CreatePin : AppCompatActivity() {
         if (uri != null) {
             selectedImageUri = uri
 
-            // 1. Update UI (using direct setImageURI as requested)
+            // 1. Update UI
             placeholderElements.visibility = View.GONE
             imagePreview.visibility = View.VISIBLE
             imagePreview.setImageURI(uri)
 
-            // Set container background to black/null and remove padding for a full-bleed look
             imgUploadContainer.background = null
             imgUploadContainer.setPadding(0, 0, 0, 0)
 
-            // 2. Convert image to Base64 string (as per Add_post example)
-            try {
-                // Open InputStream using contentResolver
-                val ins: InputStream? = contentResolver.openInputStream(uri)
-                if (ins != null) {
-                    val bytes = ins.readBytes()
-                    // store post image for uploading
-                    pinImageBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-                    ins.close()
-                }
-            } catch (e: Exception) {
-                Log.e("CreatePin", "Error converting image to Base64", e)
+            // 2. Process Image (Rotate & Convert to Base64)
+            pinImageBase64 = processImageWithRotation(uri)
+
+            if (pinImageBase64 == null) {
                 Toast.makeText(this, "Failed to process image.", Toast.LENGTH_SHORT).show()
-                pinImageBase64 = null
             }
         }
     }
@@ -237,6 +232,57 @@ class CreatePin : AppCompatActivity() {
                 val error = response?.error?.message ?: "Unknown database error"
                 onComplete(false, error)
             }
+        }
+    }
+    private fun processImageWithRotation(uri: Uri): String? {
+        return try {
+            val contentResolver = applicationContext.contentResolver
+
+            // 1. Read EXIF Data to find orientation
+            var inputStream = contentResolver.openInputStream(uri) ?: return null
+            val exif = ExifInterface(inputStream)
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL
+            )
+            inputStream.close()
+
+            // 2. Decode the Bitmap
+            inputStream = contentResolver.openInputStream(uri) ?: return null
+            val originalBitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            // 3. Determine rotation in degrees
+            val rotationInDegrees = when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                else -> 0
+            }
+
+            // 4. Rotate the Bitmap if necessary
+            val finalBitmap = if (rotationInDegrees != 0) {
+                val matrix = Matrix()
+                matrix.postRotate(rotationInDegrees.toFloat())
+                Bitmap.createBitmap(
+                    originalBitmap, 0, 0,
+                    originalBitmap.width, originalBitmap.height,
+                    matrix, true
+                )
+            } else {
+                originalBitmap
+            }
+
+            // 5. Compress to JPEG and convert to Base64
+            val outputStream = ByteArrayOutputStream()
+            finalBitmap.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+            val bytes = outputStream.toByteArray()
+
+            Base64.encodeToString(bytes, Base64.NO_WRAP)
+
+        } catch (e: Exception) {
+            Log.e("CreatePin", "Error rotating image", e)
+            null
         }
     }
 }
