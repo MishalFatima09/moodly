@@ -5,6 +5,7 @@ object AppConfig {
     //--------- REPLACE WITH YOUR LOCAL IP ADDRESS ---------
     //const val PC_IP = "192.168.96.35"
     const val PC_IP = "192.168.18.28"
+    //const val PC_IP = "192.168.18.27"
     //------------------------------------------------------
 
     const val SQL_API_PATH = "Moodly-Api/runSql.php"
