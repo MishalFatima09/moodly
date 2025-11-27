@@ -183,7 +183,6 @@ class PinDetails : AppCompatActivity() {
     }
 
     // --- NETWORKING ---
-
     private fun fetchPinDetails() {
         val query = """
             SELECT p.title, p.description, p.keywords, p.created_at, p.user_id,
@@ -195,7 +194,7 @@ class PinDetails : AppCompatActivity() {
             WHERE p.pin_id = ?
         """.trimIndent()
 
-        // 1. Disable buttons while loading
+        // Disable buttons while loading
         setButtonsEnabled(false)
 
         OnlineDbHelper.executeQuery(query, listOf(currentUserId, pinId)) { response, error ->
@@ -217,8 +216,6 @@ class PinDetails : AppCompatActivity() {
                     val username = row["username"] as? String ?: "Unknown"
                     val pfpUrl = row["profile_pic_url"] as? String ?: ""
                     val likes = (row["like_count"] as? Number)?.toInt() ?: 0
-
-                    // Extract "is_liked" (0 or 1) and convert to Boolean
                     val isLikedInt = (row["is_liked"] as? Number)?.toInt() ?: 0
                     isLiked = (isLikedInt > 0)
 
