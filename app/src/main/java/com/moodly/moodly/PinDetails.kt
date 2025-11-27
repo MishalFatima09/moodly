@@ -1,10 +1,15 @@
 package com.moodly.moodly
 
+import android.app.AlertDialog
 import android.app.DownloadManager
+import android.app.ProgressDialog
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.view.LayoutInflater
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -126,11 +131,55 @@ class PinDetails : AppCompatActivity() {
 
         optionsBtn.setOnClickListener {
             if (currentUserId == creatorId) {
-                //TODO: Show Edit/Delete Options
+                showEditDeleteDialog()
             } else {
                 Toast.makeText(this, "You can only edit your own pins.", Toast.LENGTH_SHORT).show()
             }
         }
+    }
+
+    private fun showEditDeleteDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_pin, null)
+
+        val etTitle = dialogView.findViewById<EditText>(R.id.et_edit_title)
+        val etDesc = dialogView.findViewById<EditText>(R.id.et_edit_description)
+        val btnUpdate = dialogView.findViewById<Button>(R.id.btn_confirm_update)
+        val btnDelete = dialogView.findViewById<Button>(R.id.btn_confirm_delete)
+
+        // Pre-fill current data
+        etTitle.setText(pinTitleText.text)
+        etDesc.setText(pinDescriptionText.text)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        // Make background transparent if you have rounded corners in XML, otherwise optional
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnUpdate.setOnClickListener {
+            val newTitle = etTitle.text.toString().trim()
+            val newDesc = etDesc.text.toString().trim()
+
+            if (newTitle.isEmpty()) {
+                Toast.makeText(this, "Title cannot be empty", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            updatePin(newTitle, newDesc, dialog)
+        }
+
+        btnDelete.setOnClickListener {
+            // Confirm delete to avoid accidents
+            AlertDialog.Builder(this)
+                .setTitle("Delete Pin?")
+                .setMessage("This action cannot be undone.")
+                .setPositiveButton("Delete") { _, _ ->
+                    deletePin(dialog)
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+        dialog.show()
     }
 
     // --- NETWORKING ---
@@ -198,6 +247,48 @@ class PinDetails : AppCompatActivity() {
                 }
             } else {
                 setButtonsEnabled(true)
+            }
+        }
+    }
+    private fun updatePin(newTitle: String, newDesc: String, dialog: AlertDialog) {
+        val query = "UPDATE pins SET title = ?, description = ? WHERE pin_id = ? AND user_id = ?"
+        val progressDialog = ProgressDialog(this).apply {
+            setMessage("Updating pin...")
+            setCancelable(false)
+            show()
+        }
+        setButtonsEnabled(false)
+        OnlineDbHelper.executeQuery(query, listOf(newTitle, newDesc, pinId, currentUserId)) { response, error ->
+            setButtonsEnabled(true)
+            progressDialog.dismiss()
+            if (response?.status == 1) {
+                Toast.makeText(this, "Pin updated!", Toast.LENGTH_SHORT).show()
+                pinTitleText.text = newTitle
+                pinDescriptionText.text = newDesc
+                dialog.dismiss()
+            } else {
+                Toast.makeText(this, "Failed to update: ${error?.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun deletePin(dialog: AlertDialog) {
+        val query = "DELETE FROM pins WHERE pin_id = ? AND user_id = ?"
+        setButtonsEnabled(false)
+        val progressDialog = ProgressDialog(this).apply {
+            setMessage("Deleting pin...")
+            setCancelable(false)
+            show()
+        }
+        OnlineDbHelper.executeQuery(query, listOf(pinId, currentUserId)) { response, error ->
+            setButtonsEnabled(true)
+            progressDialog.dismiss()
+            if (response?.status == 1) {
+                Toast.makeText(this, "Pin deleted.", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+                finish()
+            } else {
+                Toast.makeText(this, "Failed to delete: ${error?.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
