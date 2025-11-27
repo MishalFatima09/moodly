@@ -8,19 +8,24 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.google.android.flexbox.FlexboxLayout
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class PinDetails : AppCompatActivity() {
     // UI Elements
@@ -121,12 +126,31 @@ class PinDetails : AppCompatActivity() {
     private fun setupNavigations() {
         backBtn.setOnClickListener { finish() }
 
-        likeBtn.setOnClickListener { toggleLike() }
+        likeBtn.setOnClickListener {
+            if(Globals.isInternetAvailable(this)) {
+                toggleLike()
+            }
+            else {
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
+            }
+        }
 
-        downloadBtn.setOnClickListener { downloadImage() }
+        downloadBtn.setOnClickListener {
+            if(Globals.isInternetAvailable(this)) {
+                downloadImage()
+            }
+            else {
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
+            }
+        }
 
         saveBtn.setOnClickListener {
-            // TODO: Open "Select Board" BottomSheet
+            if(Globals.isInternetAvailable(this)) {
+                showSaveToBoardDialog()
+            }
+            else {
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
+            }
         }
 
         optionsBtn.setOnClickListener {
@@ -134,6 +158,96 @@ class PinDetails : AppCompatActivity() {
                 showEditDeleteDialog()
             } else {
                 Toast.makeText(this, "You can only edit your own pins.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    private fun showSaveToBoardDialog() {
+        if (currentUserId.isEmpty()) {
+            Toast.makeText(this, "Please log in to save pins", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val dialogView = layoutInflater.inflate(R.layout.dialog_select_board, null)
+        val bottomSheetDialog = BottomSheetDialog(this)
+        bottomSheetDialog.setContentView(dialogView)
+
+        val recyclerView = dialogView.findViewById<RecyclerView>(R.id.rv_board_list)
+        val progressBar = dialogView.findViewById<ProgressBar>(R.id.progressBar_boards)
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+
+        // Show loading state
+        progressBar.visibility = View.VISIBLE
+        recyclerView.visibility = View.GONE
+        bottomSheetDialog.show()
+
+        val query = """
+            SELECT board_id, title, cover_image_url, 
+                   (SELECT COUNT(*) FROM board_pins WHERE board_id = b.board_id) as pin_count 
+            FROM boards b 
+            WHERE user_id = ? 
+            ORDER BY created_at DESC
+        """.trimIndent()
+
+        OnlineDbHelper.executeQuery(query, listOf(currentUserId)) { response, error ->
+            progressBar.visibility = View.GONE
+            recyclerView.visibility = View.VISIBLE
+
+            if (response?.status == 1) {
+                val rows = response.data?.rows
+                val boardList = ArrayList<DATA_Board>()
+
+                if (rows != null) {
+                    for (row in rows) {
+                        val id = row["board_id"] as? String ?: ""
+                        val title = row["title"] as? String ?: "Untitled"
+                        val cover = row["cover_image_url"] as? String ?: ""
+                        val count = (row["pin_count"] as? Number)?.toInt() ?: 0
+                        boardList.add(DATA_Board(id, cover, title, count))
+                    }
+                }
+
+                if (boardList.isEmpty()) {
+                    Toast.makeText(this, "You have no boards yet.", Toast.LENGTH_SHORT).show()
+                } else {
+                    val adapter = ADAPTER_BoardSelection(boardList) { selectedBoard ->
+                        savePinToBoard(selectedBoard.board_id, bottomSheetDialog)
+                    }
+                    recyclerView.adapter = adapter
+                }
+            } else {
+                Toast.makeText(this, "Failed to load boards.", Toast.LENGTH_SHORT).show()
+                bottomSheetDialog.dismiss()
+            }
+        }
+    }
+
+    private fun savePinToBoard(boardId: String, dialog: BottomSheetDialog) {
+        val query = "INSERT INTO board_pins (board_id, pin_id) VALUES (?, ?)"
+        dialog.setCancelable(false)
+
+        OnlineDbHelper.executeQuery(query, listOf(boardId, pinId)) { response, error ->
+            dialog.setCancelable(true)
+            dialog.dismiss()
+
+            if (response?.status == 1) {
+                //Update board cover if not set
+                val updateCoverQuery = """
+                UPDATE boards 
+                SET cover_image_url = ? 
+                WHERE board_id = ? AND (cover_image_url IS NULL OR cover_image_url = '')
+            """.trimIndent()
+                OnlineDbHelper.executeQueryFireAndForget(updateCoverQuery, listOf(imageUrl, boardId))
+
+                //Save notification for pin save
+                Toast.makeText(this, "Pin saved!", Toast.LENGTH_SHORT).show()
+                val notifQuery = "INSERT INTO notifications (receiver_id, sender_id, pin_id, type) VALUES (?, ?, ?, 'SAVE')"
+                OnlineDbHelper.executeQueryFireAndForget(notifQuery, listOf(creatorId, currentUserId, pinId))
+
+                //TODO(Fahad): send fcm notification for pin save
+                //TODO(Mishal): Save pin to board in local db
+            } else {
+                Toast.makeText(this, "Pin already saved to this board.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -165,7 +279,12 @@ class PinDetails : AppCompatActivity() {
                 Toast.makeText(this, "Title cannot be empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            updatePin(newTitle, newDesc, dialog)
+            if(Globals.isInternetAvailable(this)) {
+                updatePin(newTitle, newDesc, dialog)
+            }else
+            {
+                //TODO(Mishal): queue pin title+description update for when internet is back
+            }
         }
 
         btnDelete.setOnClickListener {
@@ -174,7 +293,12 @@ class PinDetails : AppCompatActivity() {
                 .setTitle("Delete Pin?")
                 .setMessage("This action cannot be undone.")
                 .setPositiveButton("Delete") { _, _ ->
-                    deletePin(dialog)
+                    if(Globals.isInternetAvailable(this)) {
+                        deletePin(dialog)
+                    }else
+                    {
+                        //TODO(Mishal): queue pin deletion from db when internet is back (and then from local db too if it exists there)
+                    }
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
@@ -346,7 +470,8 @@ class PinDetails : AppCompatActivity() {
 
                 Toast.makeText(this, "Action failed. Check internet.", Toast.LENGTH_SHORT).show()
             } else if (isLiked) {
-                // Success + Liked -> Send Notification
+                // Success + Liked
+                //TODO(Mishal): Add (user_id, pin_id) to local pin_likes table (to show likes and liked state offline)(if you're doing that)
                 sendLikeNotification()
             }
         }
@@ -358,8 +483,8 @@ class PinDetails : AppCompatActivity() {
 
         val query = "INSERT INTO notifications (receiver_id, sender_id, pin_id, type) VALUES (?, ?, ?, 'LIKE')"
         OnlineDbHelper.executeQueryFireAndForget(query, listOf(creatorId, currentUserId, pinId))
+        //TODO(Fahad): send fcm notification for like
 
-        //TODO: send fcm notification
     }
 
     private fun updateLikeIcon() {
