@@ -32,6 +32,7 @@ class ADAPTER_Board(private val boards: List<DATA_Board>) :
         {
             Glide.with(holder.itemView.context)
                 .load(board.coverImageUrl)
+                .centerCrop()
                 .placeholder(R.color.black)
                 .error(R.drawable.empty_placeholder)
                 .into(holder.coverImg)
