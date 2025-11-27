@@ -7,12 +7,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide
 
 class ADAPTER_Board(private val boards: List<DATA_Board>) :
     RecyclerView.Adapter<ADAPTER_Board.BoardViewHolder>() {
 
     inner class BoardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val name = itemView.findViewById<TextView>(R.id.tv_board_name)
+        val coverImg = itemView.findViewById<ImageView>(R.id.img_board)
         val count = itemView.findViewById<TextView>(R.id.tv_pin_count)
     }
 
@@ -26,6 +28,18 @@ class ADAPTER_Board(private val boards: List<DATA_Board>) :
         val board = boards[position]
         holder.name.text = board.title
         holder.count.text = board.pinCount.toString()
+        if(board.coverImageUrl.isNotEmpty())
+        {
+            Glide.with(holder.itemView.context)
+                .load(board.coverImageUrl)
+                .placeholder(R.color.black)
+                .error(R.drawable.empty_placeholder)
+                .into(holder.coverImg)
+        }
+        else
+        {
+            holder.coverImg.setImageResource(R.drawable.empty_placeholder)
+        }
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, BoardDetails::class.java)
