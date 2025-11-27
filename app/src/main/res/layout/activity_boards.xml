@@ -55,6 +55,19 @@
                 android:layout_marginEnd="15dp"/>
         </LinearLayout>
     </RelativeLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_bar"
+        android:layout_above="@+id/bottom_navigation_separator"
+        android:id="@+id/nothing_to_show_text"
+        android:text="Nothing to show."
+        android:layout_centerHorizontal="true"
+        android:gravity="center"
+        android:layout_marginTop="10dp"
+        android:paddingHorizontal="15dp"
+        android:visibility="gone"
+        />
     <androidx.recyclerview.widget.RecyclerView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -63,6 +76,13 @@
         android:id="@+id/boards_rv"
         android:layout_marginTop="10dp"
         android:paddingHorizontal="15dp"
+        />
+    <ProgressBar
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:id="@+id/progress_bar"
+        android:visibility="gone"
         />
     <View
         android:id="@+id/bottom_navigation_separator"

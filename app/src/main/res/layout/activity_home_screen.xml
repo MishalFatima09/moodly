@@ -5,6 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/lighter_grey"
     tools:context=".HomeScreen">
 
     <LinearLayout
@@ -16,7 +17,9 @@
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="8dp"
-        android:paddingBottom="8dp">
+        android:paddingBottom="8dp"
+        android:elevation="2dp"
+        android:background="@color/white">
 
         <ImageView
             android:layout_width="wrap_content"
@@ -68,6 +71,12 @@
         android:padding="8dp"
         android:clipToPadding="false"
         tools:listitem="@layout/item_pin" />
+    <View
+        android:id="@+id/bottom_navigation_separator"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_above="@id/bottom_navigation"
+        android:background="@color/grey" />
 
         <com.google.android.material.bottomnavigation.BottomNavigationView
             android:id="@+id/bottom_navigation"
