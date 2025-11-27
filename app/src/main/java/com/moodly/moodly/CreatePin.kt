@@ -35,6 +35,7 @@ class CreatePin : AppCompatActivity() {
     private lateinit var edittextDescription: EditText
     private lateinit var edittextKeyword: EditText
     private lateinit var keywordsContainer: FlexboxLayout
+    //TODO: Save to board drop box
     var keywords = ArrayList<String>()
 
     // Pin Data
