@@ -72,6 +72,7 @@ class CreateBoard : AppCompatActivity() {
     private fun setupCreateBoardButton()
     {
         createBoardBtn.setOnClickListener {
+            //Validation
             val title = boardNameInput.text.toString().trim()
             val description = descriptionInput.text.toString().trim()
             if(title.isEmpty())
@@ -81,29 +82,43 @@ class CreateBoard : AppCompatActivity() {
                 return@setOnClickListener
             }
 
-            val progressDialog = ProgressDialog(this)
-            progressDialog.setMessage("Creating board...")
-            progressDialog.setCancelable(false)
-            progressDialog.show()
+            if(Globals.isInternetAvailable(this))
+            {
+                createBoard(title, description)
+            }
+            else
+            {
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
+                //TODO(Mishal): queue board creation (and create in local db when successful online)
+            }
 
-            val query = "INSERT INTO boards (user_id, title, description) VALUES (?, ?, ?)"
-            val params = listOf(currentUserId, title, description)
-            OnlineDbHelper.executeQuery(query, params) { response, error ->
-                progressDialog.dismiss()
-                if(error != null)
-                {
-                    Toast.makeText(this, "$error", Toast.LENGTH_LONG).show()
-                    return@executeQuery
-                }
-                if(response?.status == 1)
-                {
-                    Toast.makeText(this, "Board created successfully", Toast.LENGTH_SHORT).show()
-                    finish()
-                }
-                else
-                {
-                    Toast.makeText(this, "Failed to create board", Toast.LENGTH_LONG).show()
-                }
+        }
+    }
+    private fun createBoard(title: String, description: String)
+    {
+        val progressDialog = ProgressDialog(this)
+        progressDialog.setMessage("Creating board...")
+        progressDialog.setCancelable(false)
+        progressDialog.show()
+
+        val query = "INSERT INTO boards (user_id, title, description) VALUES (?, ?, ?)"
+        val params = listOf(currentUserId, title, description)
+        OnlineDbHelper.executeQuery(query, params) { response, error ->
+            progressDialog.dismiss()
+            if(error != null)
+            {
+                Toast.makeText(this, "$error", Toast.LENGTH_LONG).show()
+                return@executeQuery
+            }
+            if(response?.status == 1)
+            {
+                Toast.makeText(this, "Board created successfully", Toast.LENGTH_SHORT).show()
+                //TODO(Mishal): create board in local db (online is successful)
+                finish()
+            }
+            else
+            {
+                Toast.makeText(this, "Failed to create board", Toast.LENGTH_LONG).show()
             }
         }
     }

@@ -231,6 +231,8 @@ class PinDetails : AppCompatActivity() {
             dialog.dismiss()
 
             if (response?.status == 1) {
+                //Save successful
+
                 //Update board cover if not set
                 val updateCoverQuery = """
                 UPDATE boards 
@@ -245,7 +247,7 @@ class PinDetails : AppCompatActivity() {
                 OnlineDbHelper.executeQueryFireAndForget(notifQuery, listOf(creatorId, currentUserId, pinId))
 
                 //TODO(Fahad): send fcm notification for pin save
-                //TODO(Mishal): Save pin to board in local db
+                //TODO(Mishal): Save pin to board in local db (save to online db is successful here)
             } else {
                 Toast.makeText(this, "Pin already saved to this board.", Toast.LENGTH_SHORT).show()
             }
@@ -283,7 +285,8 @@ class PinDetails : AppCompatActivity() {
                 updatePin(newTitle, newDesc, dialog)
             }else
             {
-                //TODO(Mishal): queue pin title+description update for when internet is back
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
+                //TODO(Mishal): queue pin (title+description) update for when internet is back (then update title+desc in local db (if that pin exists there) after successful online update)
             }
         }
 
@@ -297,6 +300,7 @@ class PinDetails : AppCompatActivity() {
                         deletePin(dialog)
                     }else
                     {
+                        Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
                         //TODO(Mishal): queue pin deletion from db when internet is back (and then from local db too if it exists there)
                     }
                 }

@@ -63,7 +63,14 @@ class Boards : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         bottomNav.selectedItemId = R.id.nav_boards
-        loadBoards()
+        if(Globals.isInternetAvailable(this)) {
+            loadBoards()
+        }
+        else
+        {
+            Toast.makeText(this, "No internet connection.", Toast.LENGTH_LONG).show()
+            //TODO(Mishal): Load board previews from local db
+        }
     }
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
