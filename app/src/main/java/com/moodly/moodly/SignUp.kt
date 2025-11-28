@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.messaging.FirebaseMessaging
 
 class SignUp : AppCompatActivity() {
 
@@ -117,6 +118,7 @@ class SignUp : AppCompatActivity() {
                 editor.putString("profile_pic_url", "")
                 editor.apply()
 
+                syncFcmToken()
                 val intent = Intent(this, Login::class.java)
                 intent.putExtra("email", email)
                 intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -177,6 +179,18 @@ class SignUp : AppCompatActivity() {
             }
             // Return false to let normal typing clicks pass through
             return@setOnTouchListener false
+        }
+    }
+    private fun syncFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("Login", "Fetching FCM Token: $token")
+                // Use the static helper from your Service
+                MyFirebaseMessagingService.sendTokenToServer(token, this)
+            } else {
+                Log.e("Login", "Fetching FCM Token failed", task.exception)
+            }
         }
     }
 }

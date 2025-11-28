@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.messaging.FirebaseMessaging
 
 class Login : AppCompatActivity() {
 
@@ -126,6 +127,7 @@ class Login : AppCompatActivity() {
                     val userRow = rows[0]
                     saveToPrefs(userRow)
                     Log.d("Login", "User data saved to Prefs")
+                    syncFcmToken()
                     navigateToHome()
                 } else {
                     Log.w("Login", "User not found in SQL database")
@@ -199,6 +201,17 @@ class Login : AppCompatActivity() {
             }
             // Return false to let normal typing clicks pass through
             return@setOnTouchListener false
+        }
+    }
+    private fun syncFcmToken() {
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val token = task.result
+                Log.d("Login", "Fetching FCM Token: $token")
+                MyFirebaseMessagingService.sendTokenToServer(token, this)
+            } else {
+                Log.e("Login", "Fetching FCM Token failed", task.exception)
+            }
         }
     }
 }

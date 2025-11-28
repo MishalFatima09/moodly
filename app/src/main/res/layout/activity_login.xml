@@ -5,6 +5,7 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/white"
     tools:context=".SignUp">
 
     <RelativeLayout
@@ -46,6 +47,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Enter Your Email"
+        android:textColorHint="@color/grey"
+        android:textColor="@color/black"
         android:padding="12dp"
         android:background="@drawable/rounded_edittext_bg"
         android:layout_marginHorizontal="24dp"
@@ -70,6 +73,8 @@
         android:layout_height="wrap_content"
         android:hint="Create a Password"
         android:inputType="textPassword"
+        android:textColorHint="@color/grey"
+        android:textColor="@color/black"
         android:padding="12dp"
         android:drawableEnd="@drawable/eye"
         android:background="@drawable/rounded_edittext_bg"
@@ -109,6 +114,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="16dp"
         android:layout_below="@id/button_login"
+        android:textColor="@color/blue"
         android:text="@string/signup_prompt"
         android:textSize="14sp"
         android:clickable="true"

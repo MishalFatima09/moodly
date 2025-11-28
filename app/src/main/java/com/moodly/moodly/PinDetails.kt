@@ -4,9 +4,11 @@ import android.app.AlertDialog
 import android.app.DownloadManager
 import android.app.ProgressDialog
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.Button
@@ -20,12 +22,14 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import kotlinx.coroutines.launch
 
 class PinDetails : AppCompatActivity() {
     // UI Elements
@@ -53,6 +57,7 @@ class PinDetails : AppCompatActivity() {
     var currentUserId: String = ""
     var isLiked : Boolean = false
     var creatorId: String = ""
+    var creatorFcmToken: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,6 +69,20 @@ class PinDetails : AppCompatActivity() {
             insets
         }
 
+        // Go to home if this activity is last in the stack
+        onBackPressedDispatcher.addCallback(this, object : androidx.activity.OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (isTaskRoot) {
+                    val intent = Intent(this@PinDetails, HomeScreen::class.java)
+                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                    startActivity(intent)
+                    finish()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                }
+            }
+        })
         // Get Current User ID
         val prefs = getSharedPreferences(Globals.prefs, Context.MODE_PRIVATE)
         currentUserId = prefs.getString("user_id", "") ?: ""
@@ -124,7 +143,7 @@ class PinDetails : AppCompatActivity() {
     }
 
     private fun setupNavigations() {
-        backBtn.setOnClickListener { finish() }
+        backBtn.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         likeBtn.setOnClickListener {
             if(Globals.isInternetAvailable(this)) {
@@ -242,15 +261,35 @@ class PinDetails : AppCompatActivity() {
             """.trimIndent()
                 OnlineDbHelper.executeQueryFireAndForget(updateCoverQuery, listOf(imageUrl, boardId))
 
-                //Save notification for pin save
                 Toast.makeText(this, "Pin saved!", Toast.LENGTH_SHORT).show()
-                val notifQuery = "INSERT INTO notifications (receiver_id, sender_id, pin_id, type) VALUES (?, ?, ?, 'SAVE')"
-                OnlineDbHelper.executeQueryFireAndForget(notifQuery, listOf(creatorId, currentUserId, pinId))
+                //Save notification for pin save
+                sendSaveNotification()
 
-                //TODO(Fahad): send fcm notification for pin save
                 //TODO(Mishal): Save pin to board in local db (save to online db is successful here)
             } else {
                 Toast.makeText(this, "Pin already saved to this board.", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    private fun sendSaveNotification() {
+        val notifQuery = "INSERT INTO notifications (receiver_id, sender_id, pin_id, type) VALUES (?, ?, ?, 'SAVE')"
+        OnlineDbHelper.executeQueryFireAndForget(notifQuery, listOf(creatorId, currentUserId, pinId))
+
+
+        //Send fcm notification for board save
+        if (creatorFcmToken.isNotEmpty() && currentUserId != creatorId) {
+            val prefs = getSharedPreferences(Globals.prefs, Context.MODE_PRIVATE)
+            val senderUsername = prefs.getString("username", "Someone") ?: "Someone"
+
+            lifecycleScope.launch {
+                NotificationSender.sendNotification(
+                    fcmToken = creatorFcmToken,
+                    title = "Your pin was saved",
+                    body = "$senderUsername saved your pin '${pinTitleText.text}'",
+                    notificationType = "SAVE",
+                    pinId = pinId,
+                    imageUrl = imageUrl
+                )
             }
         }
     }
@@ -314,8 +353,8 @@ class PinDetails : AppCompatActivity() {
     // --- NETWORKING ---
     private fun fetchPinDetails() {
         val query = """
-            SELECT p.title, p.description, p.keywords, p.created_at, p.user_id,
-                   u.username, u.profile_pic_url,
+            SELECT p.title, p.description, p.keywords, p.created_at, p.user_id, p.image_url, p.aspect_ratio,
+                   u.username, u.profile_pic_url, u.fcm_token,
                    (SELECT COUNT(*) FROM pin_likes WHERE pin_id = p.pin_id) as like_count,
                    (SELECT COUNT(*) FROM pin_likes WHERE pin_id = p.pin_id AND user_id = ?) as is_liked
             FROM pins p
@@ -328,6 +367,7 @@ class PinDetails : AppCompatActivity() {
 
         OnlineDbHelper.executeQuery(query, listOf(currentUserId, pinId)) { response, error ->
             if(error != null) {
+                Log.e("Pin Details", "Error fetching pin details: ${error.message}")
                 Toast.makeText(this, "Error loading pin details", Toast.LENGTH_LONG).show()
                 setButtonsEnabled(true)
                 return@executeQuery
@@ -342,11 +382,25 @@ class PinDetails : AppCompatActivity() {
                     val keywordsStr = row["keywords"] as? String ?: ""
                     val date = row["created_at"] as? String ?: ""
                     creatorId = row["user_id"] as? String ?: ""
+                    creatorFcmToken = row["fcm_token"] as? String ?: ""
                     val username = row["username"] as? String ?: "Unknown"
                     val pfpUrl = row["profile_pic_url"] as? String ?: ""
                     val likes = (row["like_count"] as? Number)?.toInt() ?: 0
                     val isLikedInt = (row["is_liked"] as? Number)?.toInt() ?: 0
                     isLiked = (isLikedInt > 0)
+
+                    // Update image URL and aspect ratio if not provided via intent
+                    if(imageUrl.isEmpty())
+                    {
+                        imageUrl = row["image_url"] as? String ?: imageUrl
+                        val rawRatio = row["aspect_ratio"]
+                        aspectRatio = when (rawRatio) {
+                            is Number -> rawRatio.toFloat()
+                            is String -> rawRatio.toFloatOrNull() ?: 1.0f
+                            else -> 1.0f
+                        }
+                        loadPinImage()
+                    }
 
                     // Update UI
                     pinTitleText.text = title
@@ -494,7 +548,23 @@ class PinDetails : AppCompatActivity() {
 
         val query = "INSERT INTO notifications (receiver_id, sender_id, pin_id, type) VALUES (?, ?, ?, 'LIKE')"
         OnlineDbHelper.executeQueryFireAndForget(query, listOf(creatorId, currentUserId, pinId))
-        //TODO(Fahad): send fcm notification for like
+
+        //Send fcm notification for pin like
+        if (creatorFcmToken.isNotEmpty() && currentUserId != creatorId) {
+            val prefs = getSharedPreferences(Globals.prefs, Context.MODE_PRIVATE)
+            val senderUsername = prefs.getString("username", "Someone") ?: "Someone"
+
+            lifecycleScope.launch {
+                NotificationSender.sendNotification(
+                    fcmToken = creatorFcmToken,
+                    title = "Your pin was liked",
+                    body = "$senderUsername liked your pin '${pinTitleText.text}'",
+                    notificationType = "LIKE",
+                    pinId = pinId,
+                    imageUrl = imageUrl
+                )
+            }
+        }
 
     }
 
