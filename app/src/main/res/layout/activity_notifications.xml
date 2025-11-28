@@ -59,6 +59,27 @@
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
         android:clipToPadding="false" />
+    <TextView
+        android:id="@+id/nothing_to_show_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_app_bar"
+        android:layout_above="@id/bottom_navigation_separator"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:text="Nothing to show."
+        android:textSize="18sp"
+        android:textColor="@color/grey"
+        android:layout_centerHorizontal="true"
+        android:visibility="gone"/>
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/top_app_bar"
+        android:layout_marginTop="50dp"
+        android:layout_centerInParent="true"
+        android:visibility="gone"/>
     <View
         android:id="@+id/bottom_navigation_separator"
         android:layout_width="match_parent"

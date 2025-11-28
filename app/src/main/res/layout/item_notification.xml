@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp"
+    android:background="?attr/selectableItemBackground">
+
+    <!-- 1. Sender Profile Picture (Left) -->
+    <!-- Circular CardView -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_pfp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:cardCornerRadius="24dp"
+        app:cardElevation="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/iv_sender_pfp"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            tools:src="@color/black" />
+    </androidx.cardview.widget.CardView>
+
+    <!-- 2. Notification Text (Center) -->
+    <!-- Takes up all remaining space between images -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_marginStart="12dp"
+        android:layout_marginEnd="12dp"
+        app:layout_constraintStart_toEndOf="@id/card_pfp"
+        app:layout_constraintEnd_toStartOf="@id/card_pin_preview"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- The main notification message -->
+        <TextView
+            android:id="@+id/tv_notif_message"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="JohnDoe liked your pin 'Sunset Vibes'"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:maxLines="2"
+            android:ellipsize="end" />
+
+        <!-- Optional: Time ago -->
+        <TextView
+            android:id="@+id/tv_notif_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="2 mins ago"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            android:layout_marginTop="2dp"/>
+    </LinearLayout>
+
+    <!-- 3. Pin Preview Image (Right) -->
+    <!-- Rounded Rectangle CardView -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_pin_preview"
+        android:layout_width="48dp"
+        android:layout_height="64dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <ImageView
+            android:id="@+id/iv_pin_preview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            tools:src="@color/black" />
+    </androidx.cardview.widget.CardView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
