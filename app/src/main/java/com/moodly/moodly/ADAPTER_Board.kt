@@ -9,7 +9,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 
-class ADAPTER_Board(private val boards: List<DATA_Board>) :
+class ADAPTER_Board(private val boards: List<DATA_Board>,
+                    private val onBoardLongPressed: (DATA_Board) -> Unit) :
     RecyclerView.Adapter<ADAPTER_Board.BoardViewHolder>() {
 
     inner class BoardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -41,10 +42,17 @@ class ADAPTER_Board(private val boards: List<DATA_Board>) :
         {
             holder.coverImg.setImageResource(R.drawable.empty_placeholder)
         }
+        // Go to board details on click
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, BoardDetails::class.java)
             context.startActivity(intent)
+        }
+
+        // Handle long press for deletion
+        holder.itemView.setOnLongClickListener {
+            onBoardLongPressed(board)
+            true
         }
     }
 

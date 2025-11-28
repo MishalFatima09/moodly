@@ -1,5 +1,7 @@
 package com.moodly.moodly
 
+import android.app.AlertDialog
+import android.app.ProgressDialog
 import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
@@ -91,8 +93,54 @@ class Boards : AppCompatActivity() {
         val orientation = resources.configuration.orientation
         val spanCount = if (orientation == Configuration.ORIENTATION_LANDSCAPE) 3 else 2
         boards_rv.layoutManager = GridLayoutManager(this, spanCount)
-        adapter = ADAPTER_Board(boards)
+        adapter = ADAPTER_Board(boards) { selectedBoard ->
+            showDeleteBoardDialog(selectedBoard)
+        }
         boards_rv.adapter = adapter
+    }
+    private fun showDeleteBoardDialog(board: DATA_Board) {
+        //Delete board when a board is long pressed in the boards activity
+        AlertDialog.Builder(this)
+            .setTitle("Delete ${board.title}?")
+            .setMessage("Are you sure? All pins inside will be unsaved from this board.")
+            .setPositiveButton("Delete") { dialog, _ ->
+                if(Globals.isInternetAvailable(this)) {
+                    deleteBoard(board)
+                }
+                else {
+                    Toast.makeText(this, "No internet connection.", Toast.LENGTH_LONG).show()
+                    //TODO(Mishal): Queue board deletion for when online (and delete in local db when online success)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun deleteBoard(board: DATA_Board) {
+        val query = "DELETE FROM boards WHERE board_id = ? AND user_id = ?"
+
+        val progressDialog = ProgressDialog(this).apply {
+            setMessage("Deleting board...")
+            setCancelable(false)
+            show()
+        }
+
+        OnlineDbHelper.executeQuery(query, listOf(board.board_id, currentUserId)) { response, error ->
+            progressDialog.dismiss()
+            if(error != null) {
+                Toast.makeText(this, "Error: ${error.message}", Toast.LENGTH_SHORT).show()
+                return@executeQuery
+            }
+            if (response?.status == 1) {
+                // Success
+                Toast.makeText(this, "Board deleted", Toast.LENGTH_SHORT).show()
+                // Refresh the boards list
+                loadBoards()
+                //TODO(Mishal): Delete board from local db (in local db, make sure to have on_delete_cascade for board_pins table so all entries for that board are also deleted)(dont delete the pins themselves tho they might exist in some other offline board)
+            } else {
+                Toast.makeText(this, "Failed to delete: ${error?.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
     private fun loadBoards() {
         boards_rv.visibility = View.GONE
