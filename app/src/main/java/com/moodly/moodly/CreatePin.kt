@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.RelativeLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -35,12 +36,19 @@ class CreatePin : AppCompatActivity() {
     private lateinit var edittextDescription: EditText
     private lateinit var edittextKeyword: EditText
     private lateinit var keywordsContainer: FlexboxLayout
-    //TODO(Fahad): show save to board drop box
-    var keywords = ArrayList<String>()
+    private lateinit var chooseBoardContainer: RelativeLayout
+    private lateinit var tvBoardHint: TextView
+
 
     // Pin Data
+    private var userId: String = ""
     private var selectedImageUri: Uri? = null
     private var pinImageBase64: String? = null
+    var keywords = ArrayList<String>()
+
+    // Board Data
+    private var userBoards = ArrayList<DATA_Board>()
+    private var selectedBoardId: String? = null
 
     // Activity Result Launcher for image selection (Replaced displaySelectedImage call)
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -68,6 +76,10 @@ class CreatePin : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_pin)
 
+        // Get User ID
+        val prefs = getSharedPreferences(Globals.prefs, MODE_PRIVATE)
+        userId = prefs.getString("user_id", "") ?: ""
+
         // Initialize UI components
         bottomNav = findViewById(R.id.bottom_navigation)
         imgUploadContainer = findViewById(R.id.image_upload_container)
@@ -79,12 +91,20 @@ class CreatePin : AppCompatActivity() {
         edittextDescription = findViewById(R.id.edittext_description)
         edittextKeyword = findViewById(R.id.edittext_keyword)
         keywordsContainer= findViewById(R.id.keywords_container)
+        chooseBoardContainer = findViewById(R.id.choose_board_container)
+        tvBoardHint = findViewById(R.id.tv_board_hint)
 
         bottomNav.selectedItemId = R.id.nav_create
 
         // Add listeners
         setupNavigations()
         setupPublishButton()
+        setupBoardSelection()
+
+        // Fetch boards to populate dropdown
+        if (userId.isNotEmpty()) {
+            fetchUserBoards()
+        }
     }
 
     // Lifecycle setup...
@@ -132,7 +152,13 @@ class CreatePin : AppCompatActivity() {
     private fun setupPublishButton() {
         btnPublish.setOnClickListener {
             if (validatePinData()) {
-                uploadPin()
+                if(Globals.isInternetAvailable(this)) {
+                    uploadPin()
+                }
+                else {
+                    //TODO(Mishal): Queue pin upload for when online (and save pin to board if user selected a board)(in both local and online db)
+                    Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -146,20 +172,16 @@ class CreatePin : AppCompatActivity() {
             Toast.makeText(this, "Please enter a title for your pin.", Toast.LENGTH_SHORT).show()
             return false
         }
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "User ID missing. Please login again.", Toast.LENGTH_SHORT).show()
+            return false
+        }
         return true
     }
 
     private fun uploadPin() {
         val title = edittextTitle.text.toString().trim()
         val description = edittextDescription.text.toString().trim()
-
-        val prefs = getSharedPreferences(Globals.prefs, MODE_PRIVATE)
-        val userId = prefs.getString("user_id", null)
-
-        if (userId.isNullOrEmpty()) {
-            Toast.makeText(this, "User ID not found. Please log in.", Toast.LENGTH_SHORT).show()
-            return
-        }
 
         // Show loading dialog
         val progressDialog = android.app.ProgressDialog(this).apply {
@@ -179,12 +201,30 @@ class CreatePin : AppCompatActivity() {
 
             // Step 2: Insert Pin into Database
             progressDialog.setMessage("Saving pin data...")
-            insertPinToDatabase(userId, title, description, keywords, imageUrl) { success, errorMsg ->
-                progressDialog.dismiss()
-                if (success) {
+            // Step 2: Insert Pin (and get new ID)
+            insertPinToDatabase(userId, title, description, keywords, imageUrl) { success, errorMsg, newPinId ->
+
+                if (success && newPinId != null && selectedBoardId != null) {
+                    // Step 3: Save to board (If selected)
+                    progressDialog.setMessage("Saving to board...")
+                    val saveQuery = "INSERT INTO board_pins (board_id, pin_id) VALUES (?, ?)"
+
+                    OnlineDbHelper.executeQuery(saveQuery, listOf(selectedBoardId!!, newPinId)) { _, _ ->
+                        progressDialog.dismiss()
+                        Toast.makeText(this, "Pin published and saved!", Toast.LENGTH_SHORT).show()
+                        finish()
+                    }
+
+                    val updateCover = "UPDATE boards SET cover_image_url = ? WHERE board_id = ? AND (cover_image_url IS NULL OR cover_image_url = '')"
+                    OnlineDbHelper.executeQueryFireAndForget(updateCover, listOf(imageUrl, selectedBoardId!!))
+
+                } else if (success) {
+                    // Success (No board selected)
+                    progressDialog.dismiss()
                     Toast.makeText(this, "Pin published successfully!", Toast.LENGTH_SHORT).show()
-                    finish() // Close the activity after success
+                    finish()
                 } else {
+                    progressDialog.dismiss()
                     Toast.makeText(this, "Failed to save pin: $errorMsg", Toast.LENGTH_LONG).show()
                 }
             }
@@ -197,9 +237,9 @@ class CreatePin : AppCompatActivity() {
         description: String,
         keywords: List<String>,
         imageUrl: String,
-        onComplete: (Boolean, String?) -> Unit
+        onComplete: (Boolean, String?, String?) -> Unit // success, error message, new pin ID
     ) {
-        // Join list into a single comma seperated string
+        // Use Pipe | separator for keywords
         val finalKeywords = keywords.joinToString("|")
 
         val aspectRatio = try {
@@ -216,25 +256,79 @@ class CreatePin : AppCompatActivity() {
         } catch (e: Exception) {
             1.0f
         }
+        //Returns the new pin's id
         val query = """
             INSERT INTO pins (user_id, title, description, keywords, image_url, aspect_ratio) 
             VALUES (?, ?, ?, ?, ?, ?)
+            RETURNING pin_id
         """.trimIndent()
 
         val params = listOf(userId, title, description, finalKeywords, imageUrl, aspectRatio)
 
         OnlineDbHelper.executeQuery(query, params) { response, exception ->
             if (exception != null) {
-                onComplete(false, exception.message)
+                onComplete(false, exception.message, null)
                 return@executeQuery
             }
 
-            if (response?.status == 1 && response.error == null) {
-                onComplete(true, null)
+            if (response?.status == 1) {
+                // Extract the returned ID
+                val rows = response.data?.rows
+                val newPinId = rows?.firstOrNull()?.get("pin_id") as? String
+
+                onComplete(true, null, newPinId)
             } else {
                 val error = response?.error?.message ?: "Unknown database error"
-                onComplete(false, error)
+                onComplete(false, error, null)
             }
+        }
+    }
+    private fun fetchUserBoards() {
+        // Fetch simple list of boards for dropdown
+        val query = "SELECT board_id, title FROM boards WHERE user_id = ? ORDER BY created_at DESC"
+
+        OnlineDbHelper.executeQuery(query, listOf(userId)) { response, error ->
+            if (response?.status == 1) {
+                val rows = response.data?.rows
+                userBoards.clear()
+                if (rows != null) {
+                    for (row in rows) {
+                        val id = row["board_id"] as? String ?: ""
+                        val title = row["title"] as? String ?: "Untitled"
+                        // Using DATA_Board container, ignoring other fields
+                        userBoards.add(DATA_Board(id, "", title, "", 0))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun setupBoardSelection() {
+        chooseBoardContainer.setOnClickListener {
+            if (userBoards.isEmpty()) {
+                Toast.makeText(this, "No boards found.", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val popup = PopupMenu(this, chooseBoardContainer)
+
+            for (i in userBoards.indices) {
+                // menu.add(groupId, itemId, order, title)
+                popup.menu.add(0, i, 0, userBoards[i].title)
+            }
+
+            popup.setOnMenuItemClickListener { item ->
+                val position = item.itemId
+                val selectedBoard = userBoards[position]
+
+                // Update UI
+                tvBoardHint.text = selectedBoard.title
+                tvBoardHint.setTextColor(resources.getColor(android.R.color.black, theme))
+
+                selectedBoardId = selectedBoard.board_id
+                true
+            }
+            popup.show()
         }
     }
     private fun processImageWithRotation(uri: Uri): String? {
