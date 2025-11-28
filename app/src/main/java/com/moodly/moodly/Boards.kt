@@ -150,6 +150,7 @@ class Boards : AppCompatActivity() {
             SELECT 
                 b.board_id, 
                 b.title, 
+                b.description,
                 b.cover_image_url,
                 (SELECT COUNT(*) FROM board_pins WHERE board_id = b.board_id) as pin_count
             FROM boards b
@@ -172,10 +173,11 @@ class Boards : AppCompatActivity() {
                     for (row in rows) {
                         val id = row["board_id"] as? String ?: ""
                         val title = row["title"] as? String ?: "Untitled"
+                        val description = row["description"] as? String ?: ""
                         val cover = row["cover_image_url"] as? String ?: ""
                         val count = (row["pin_count"] as? Number)?.toInt() ?: 0
 
-                        boards.add(DATA_Board(id, cover, title, count))
+                        boards.add(DATA_Board(id, cover, title,description, count))
                     }
                 }
 

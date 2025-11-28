@@ -182,7 +182,7 @@ class PinDetails : AppCompatActivity() {
         bottomSheetDialog.show()
 
         val query = """
-            SELECT board_id, title, cover_image_url, 
+            SELECT board_id, title, cover_image_url, description,
                    (SELECT COUNT(*) FROM board_pins WHERE board_id = b.board_id) as pin_count 
             FROM boards b 
             WHERE user_id = ? 
@@ -201,9 +201,10 @@ class PinDetails : AppCompatActivity() {
                     for (row in rows) {
                         val id = row["board_id"] as? String ?: ""
                         val title = row["title"] as? String ?: "Untitled"
+                        val description = row["description"] as? String ?: ""
                         val cover = row["cover_image_url"] as? String ?: ""
                         val count = (row["pin_count"] as? Number)?.toInt() ?: 0
-                        boardList.add(DATA_Board(id, cover, title, count))
+                        boardList.add(DATA_Board(id, cover, title, description, count))
                     }
                 }
 

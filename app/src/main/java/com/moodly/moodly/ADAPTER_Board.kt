@@ -46,6 +46,10 @@ class ADAPTER_Board(private val boards: List<DATA_Board>,
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, BoardDetails::class.java)
+            intent.putExtra("board_id", board.board_id)
+            intent.putExtra("board_title", board.title)
+            intent.putExtra("board_description", board.description)
+            intent.putExtra("board_pin_count", board.pinCount)
             context.startActivity(intent)
         }
 
