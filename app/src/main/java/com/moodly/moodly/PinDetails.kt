@@ -366,6 +366,12 @@ class PinDetails : AppCompatActivity() {
                         .into(creatorImage)
 
                     loadKeywords(keywordsStr)
+
+                    /*
+                    Hint(Mishal): All details of the pin exist here in global or local vars
+                    (pinId, imageUrl, title, description, keywordsString, likeCount, isLiked, aspectRatio, creatorId, creatorUsername, creatorPfpUrl, creationDate).
+                    You can save them for local db in an object here (for when and if the user saves it to a board)(just insert the object).
+                     */
                     setButtonsEnabled(true)
                 } else {
                     Toast.makeText(this, "Pin not found.", Toast.LENGTH_SHORT).show()
