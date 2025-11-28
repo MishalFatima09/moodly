@@ -96,6 +96,7 @@ class BoardDetails : AppCompatActivity() {
         }
         else{
             //TODO(Mishal): Load board pins from local db
+            Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
         }
     }
     private fun setupRecyclerView()
