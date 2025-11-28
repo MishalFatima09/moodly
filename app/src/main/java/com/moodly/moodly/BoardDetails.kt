@@ -1,8 +1,13 @@
 package com.moodly.moodly
 
+import android.app.AlertDialog
+import android.app.ProgressDialog
 import android.content.res.Configuration
 import android.graphics.Typeface
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -76,12 +81,10 @@ class BoardDetails : AppCompatActivity() {
         boardTitle.text = boardTitleText
         if(boardDescriptionText.isEmpty())
         {
-            boardDescriptionText = "No description"
-            boardDescription.setTypeface(null, Typeface.ITALIC)
+            boardDescription.text = "No description"
         }
         else{
             boardDescription.text = boardDescriptionText
-            boardDescription.setTypeface(null, Typeface.NORMAL)
         }
         boardPinsCount.text = "$boardPinCountText Pins"
 
@@ -106,6 +109,9 @@ class BoardDetails : AppCompatActivity() {
     private fun setupNavigations() {
         backBtn.setOnClickListener {
             finish()
+        }
+        editBtn.setOnClickListener {
+            showEditBoardDialog()
         }
     }
     private fun getSpanCount(): Int {
@@ -149,6 +155,79 @@ class BoardDetails : AppCompatActivity() {
 
                 adapter.notifyDataSetChanged()
                 boardPinsCount.text = "${pins.size} Pins"
+            }
+        }
+    }
+
+    private fun showEditBoardDialog() {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_board, null)
+
+        val etTitle = dialogView.findViewById<EditText>(R.id.et_board_title)
+        val etDesc = dialogView.findViewById<EditText>(R.id.et_board_description)
+        val btnSave = dialogView.findViewById<Button>(R.id.btn_save_board)
+
+        // fill current data
+        etTitle.setText(boardTitleText)
+        etDesc.setText(boardDescriptionText)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        btnSave.setOnClickListener {
+            val newTitle = etTitle.text.toString().trim()
+            val newDesc = etDesc.text.toString().trim()
+
+            if (newTitle.isEmpty()) {
+                Toast.makeText(this, "Board title cannot be empty", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            if(Globals.isInternetAvailable(this)) {
+                updateBoard(newTitle, newDesc, dialog)
+            }
+            else
+            {
+                Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
+                //TODO(Mishal): Queue the board title+desc update for when online (and update in local db when success)
+            }
+        }
+
+        dialog.show()
+    }
+
+    private fun updateBoard(newTitle: String, newDesc: String, dialog: AlertDialog) {
+        val query = "UPDATE boards SET title = ?, description = ? WHERE board_id = ? AND user_id = ?"
+
+        val progressDialog = ProgressDialog(this).apply {
+            setMessage("Updating board...")
+            setCancelable(false)
+            show()
+        }
+        dialog.setCancelable(false)
+
+        OnlineDbHelper.executeQuery(query, listOf(newTitle, newDesc, boardId, currentUserId)) { response, error ->
+            dialog.setCancelable(true)
+            progressDialog.dismiss()
+            if(error!=null)
+            {
+                Toast.makeText(this, "Error updating board: ${error.message}", Toast.LENGTH_SHORT).show()
+                return@executeQuery
+            }
+            if (response?.status == 1) {
+                Toast.makeText(this, "Board updated!", Toast.LENGTH_SHORT).show()
+
+                // Update UI variables
+                boardTitleText = newTitle
+                boardDescriptionText = newDesc
+
+                // Update TextViews
+                boardTitle.text = newTitle
+                boardDescription.text = newDesc
+
+                //TODO(Mishal): Update board title+desc in local db (online update is success here)
+                dialog.dismiss()
+            } else {
+                Toast.makeText(this, "Failed to update: ${error?.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
