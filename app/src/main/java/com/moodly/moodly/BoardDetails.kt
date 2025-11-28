@@ -103,7 +103,9 @@ class BoardDetails : AppCompatActivity() {
         val layoutManager = StaggeredGridLayoutManager(getSpanCount(), StaggeredGridLayoutManager.VERTICAL)
         recyclerView.layoutManager = layoutManager
         recyclerView.addItemDecoration(UTILITY_SpacingItemDecorator(2))
-        adapter = ADAPTER_Pin(pins)
+        adapter = ADAPTER_Pin(pins, boardId) { selectedPin ->
+            showRemovePinDialog(selectedPin)
+        }
         recyclerView.adapter = adapter
     }
     private fun setupNavigations() {
@@ -228,6 +230,48 @@ class BoardDetails : AppCompatActivity() {
                 dialog.dismiss()
             } else {
                 Toast.makeText(this, "Failed to update: ${error?.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+    private fun showRemovePinDialog(pin: DATA_Pin) {
+        AlertDialog.Builder(this)
+            .setTitle("Remove from Board?")
+            .setMessage("This will remove the pin from '$boardTitleText'.")
+            .setPositiveButton("Remove") { _, _ ->
+                if(Globals.isInternetAvailable(this)) {
+                    removePinFromBoard(pin)
+                }
+                else {
+                    Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
+                    //TODO(Mishal): Queue the pin removal from board for when online (and update in local db when success)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun removePinFromBoard(pin: DATA_Pin) {
+        val query = "DELETE FROM board_pins WHERE board_id = ? AND pin_id = ?"
+
+        OnlineDbHelper.executeQuery(query, listOf(boardId, pin.pinId)) { response, error ->
+            if(error!=null)
+            {
+                Toast.makeText(this, "Error removing pin: ${error.message}", Toast.LENGTH_SHORT).show()
+                return@executeQuery
+            }
+            if (response?.status == 1) {
+                Toast.makeText(this, "Pin removed", Toast.LENGTH_SHORT).show()
+
+                // Refresh the list locally without reloading everything from net
+                pins.remove(pin)
+                adapter.notifyDataSetChanged()
+
+                // Update count text
+                boardPinCountText = "${pins.size} Pins"
+                boardPinsCount.text = boardPinCountText
+            } else {
+                Toast.makeText(this, "Failed to remove: ${error?.message} ", Toast.LENGTH_SHORT)
+                    .show()
             }
         }
     }

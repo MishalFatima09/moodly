@@ -10,7 +10,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 
-class ADAPTER_Pin(private val pins: List<DATA_Pin>) :
+class ADAPTER_Pin(private val pins: List<DATA_Pin>,
+                  private val boardId : String? = null,
+                  private val onPinLongClicked: ((DATA_Pin) -> Unit)? = null) :
     RecyclerView.Adapter<ADAPTER_Pin.PinViewHolder>() {
 
     inner class PinViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -56,6 +58,16 @@ class ADAPTER_Pin(private val pins: List<DATA_Pin>) :
             intent.putExtra("image_url", pin.imageUrl)
             intent.putExtra("aspect_ratio", pin.aspectRatio)
             context.startActivity(intent)
+        }
+
+        if(boardId != null) {
+            holder.itemView.setOnLongClickListener {
+                // Pass the event back to the Activity to handle the Dialog/DB call
+                onPinLongClicked?.invoke(pin)
+                true
+            }
+        } else {
+            holder.itemView.setOnLongClickListener(null)
         }
     }
     override fun getItemCount() = pins.size
