@@ -21,6 +21,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.exifinterface.media.ExifInterface
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.FirebaseAuth
 import java.io.ByteArrayOutputStream
 
 class EditProfile : AppCompatActivity() {
@@ -160,14 +161,42 @@ class EditProfile : AppCompatActivity() {
     }
 
     private fun updateUserInDatabase(username: String, fullName: String, email: String, phone: String, profilePicUrl: String, newPassword: String) {
-        // Build UPDATE query
-        val query = if (newPassword.isNotEmpty()) {
-            // TODO: Also update Firebase password if needed
-            "UPDATE users SET username = ?, full_name = ?, email = ?, phone_number = ?, profile_pic_url = ? WHERE user_id = ?"
-        } else {
-            "UPDATE users SET username = ?, full_name = ?, email = ?, phone_number = ?, profile_pic_url = ? WHERE user_id = ?"
-        }
+        // If password is provided, update Firebase Auth first
+        if (newPassword.isNotEmpty()) {
+            if (newPassword.length < 6) {
+                hideLoadingDialog()
+                Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show()
+                return
+            }
 
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
+            if (firebaseUser == null) {
+                hideLoadingDialog()
+                Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show()
+                return
+            }
+
+            // Update Firebase password
+            firebaseUser.updatePassword(newPassword)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        Log.d("EditProfile", "Firebase password updated successfully")
+                        // Now update database
+                        updateDatabaseOnly(username, fullName, email, phone, profilePicUrl)
+                    } else {
+                        hideLoadingDialog()
+                        Log.e("EditProfile", "Firebase password update failed", task.exception)
+                        Toast.makeText(this, "Password update failed: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                    }
+                }
+        } else {
+            // No password change, just update database
+            updateDatabaseOnly(username, fullName, email, phone, profilePicUrl)
+        }
+    }
+
+    private fun updateDatabaseOnly(username: String, fullName: String, email: String, phone: String, profilePicUrl: String) {
+        val query = "UPDATE users SET username = ?, full_name = ?, email = ?, phone_number = ?, profile_pic_url = ? WHERE user_id = ?"
         val params = listOf(username, fullName, email, phone, profilePicUrl, user_id)
 
         OnlineDbHelper.executeQuery(query, params) { response, error ->

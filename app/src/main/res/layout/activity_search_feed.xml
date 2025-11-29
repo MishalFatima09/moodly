@@ -50,6 +50,7 @@
             </LinearLayout>
 
             <TextView
+                android:id="@+id/recent_searches_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -71,6 +72,7 @@
                 tools:listitem="@layout/item_recent_search" />
 
             <TextView
+                android:id="@+id/popular_tags_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -103,6 +105,7 @@
                 android:textSize="12sp" />
 
             <TextView
+                android:id="@+id/results_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
@@ -111,6 +114,27 @@
                 android:textColor="@color/black"
                 android:textSize="18sp"
                 android:textStyle="bold" />
+
+            <!-- Loading Progress Bar -->
+            <ProgressBar
+                android:id="@+id/progress_bar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="32dp"
+                android:visibility="gone" />
+
+            <!-- Empty State Text -->
+            <TextView
+                android:id="@+id/nothing_to_show_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="32dp"
+                android:text="No pins found"
+                android:textColor="#999999"
+                android:textSize="16sp"
+                android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_ideas_grid"
