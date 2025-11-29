@@ -165,6 +165,34 @@
 
             </RelativeLayout>
 
+            <!-- Delete Account -->
+            <RelativeLayout
+                android:id="@+id/delete_account_item"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Delete account"
+                    android:textColor="#E53935"
+                    android:textSize="16sp" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_centerVertical="true"
+                    android:src="@drawable/ic_chevron_right"
+                    android:contentDescription="Navigate" />
+
+            </RelativeLayout>
+
             <!-- Add Payment Method -->
             <RelativeLayout
                 android:id="@+id/add_payment_item"
@@ -342,6 +370,28 @@
                     android:layout_centerVertical="true"
                     android:src="@drawable/ic_chevron_right"
                     android:contentDescription="Navigate" />
+
+            </RelativeLayout>
+
+            <!-- Logout -->
+            <RelativeLayout
+                android:id="@+id/logout_item"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:paddingLeft="16dp"
+                android:paddingRight="16dp"
+                android:background="?attr/selectableItemBackground"
+                android:clickable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_centerVertical="true"
+                    android:text="Logout"
+                    android:textColor="#000000"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
 
             </RelativeLayout>
 
