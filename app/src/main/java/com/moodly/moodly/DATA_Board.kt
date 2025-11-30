@@ -7,3 +7,4 @@ data class DATA_Board(
     val description: String,
     val pinCount: Int
 )
+

@@ -29,11 +29,15 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.gson.Gson
+import com.moodly.moodly.Globals.scheduleSyncWorker
 import kotlinx.coroutines.launch
+
 
 class PinDetails : AppCompatActivity() {
     // UI Elements
     lateinit var backBtn : ImageView
+
     lateinit var optionsBtn : ImageView
     lateinit var pinImage : ImageView
     lateinit var likeBtn : LinearLayout
@@ -47,6 +51,7 @@ class PinDetails : AppCompatActivity() {
     lateinit var creatorUsernameText : TextView
     lateinit var dateText : TextView
     lateinit var keywordsContainer : FlexboxLayout
+    lateinit var offlineDbHelper: OfflineDbHelper
 
     // Data
     lateinit var pinId : String
@@ -83,9 +88,12 @@ class PinDetails : AppCompatActivity() {
                 }
             }
         })
+
+
         // Get Current User ID
         val prefs = getSharedPreferences(Globals.prefs, Context.MODE_PRIVATE)
         currentUserId = prefs.getString("user_id", "") ?: ""
+        offlineDbHelper = OfflineDbHelper.getInstance(applicationContext)
 
         // Initialize UI
         initViews()
@@ -265,12 +273,13 @@ class PinDetails : AppCompatActivity() {
                 //Save notification for pin save
                 sendSaveNotification()
 
-                //TODO(Mishal): Save pin to board in local db (save to online db is successful here)
+                offlineDbHelper.addPinBoardLink(boardId, pinId)
             } else {
                 Toast.makeText(this, "Pin already saved to this board.", Toast.LENGTH_SHORT).show()
             }
         }
     }
+
     private fun sendSaveNotification() {
         val notifQuery = "INSERT INTO notifications (receiver_id, sender_id, pin_id, type) VALUES (?, ?, ?, 'SAVE')"
         OnlineDbHelper.executeQueryFireAndForget(notifQuery, listOf(creatorId, currentUserId, pinId))
@@ -313,6 +322,7 @@ class PinDetails : AppCompatActivity() {
         // Make background transparent if you have rounded corners in XML, otherwise optional
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
+        // --- Update Logic ---
         btnUpdate.setOnClickListener {
             val newTitle = etTitle.text.toString().trim()
             val newDesc = etDesc.text.toString().trim()
@@ -321,27 +331,62 @@ class PinDetails : AppCompatActivity() {
                 Toast.makeText(this, "Title cannot be empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if(Globals.isInternetAvailable(this)) {
+
+            if (Globals.isInternetAvailable(this)) {
+                // Online: Execute immediately
                 updatePin(newTitle, newDesc, dialog)
-            }else
-            {
-                Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
-                //TODO(Mishal): queue pin (title+description) update for when internet is back (then update title+desc in local db (if that pin exists there) after successful online update)
+            } else {
+                // OFFLINE: Queue the update action and apply changes locally
+
+                // 1. Prepare JSON Payload for the queue
+                val payload = mapOf(
+                    "pin_id" to pinId,
+                    "title" to newTitle,
+                    "description" to newDesc
+                )
+
+                // Assuming Globals.gson is available for JSON serialization
+                val payloadJson = Globals.gson.toJson(payload)
+
+                // 2. Queue the action
+                offlineDbHelper.queueOfflineAction("PIN_UPDATE", payloadJson)
+                scheduleSyncWorker(this)
+
+                // 3. Apply optimistic UI updates
+                pinTitleText.text = newTitle
+                pinDescriptionText.text = newDesc
+                dialog.dismiss() // Close the edit dialog
+
+                Toast.makeText(this, "Pin update queued for sync.", Toast.LENGTH_LONG).show()
             }
         }
 
+        // --- Delete Logic ---
         btnDelete.setOnClickListener {
             // Confirm delete to avoid accidents
             AlertDialog.Builder(this)
                 .setTitle("Delete Pin?")
                 .setMessage("This action cannot be undone.")
                 .setPositiveButton("Delete") { _, _ ->
-                    if(Globals.isInternetAvailable(this)) {
+
+                    if (Globals.isInternetAvailable(this)) {
+                        // Online: Execute immediately
                         deletePin(dialog)
-                    }else
-                    {
-                        Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
-                        //TODO(Mishal): queue pin deletion from db when internet is back (and then from local db too if it exists there)
+                    } else {
+                        // OFFLINE: Queue the delete action and hide pin locally
+
+                        // 1. Prepare JSON Payload for the queue
+                        val payload = mapOf("pin_id" to pinId)
+                        val payloadJson = Globals.gson.toJson(payload)
+
+                        // 2. Queue the action
+                        offlineDbHelper.queueOfflineAction("PIN_DELETE", payloadJson)
+                        scheduleSyncWorker(this)
+
+                        // 3. Close UI/Activity as if the deletion was successful
+                        Toast.makeText(this, "Pin deletion queued for sync.", Toast.LENGTH_LONG).show()
+                        dialog.dismiss() // Close the edit dialog
+                        finish()        // Close PinDetails activity
                     }
                 }
                 .setNegativeButton("Cancel", null)
@@ -422,7 +467,7 @@ class PinDetails : AppCompatActivity() {
                     loadKeywords(keywordsStr)
 
                     /*
-                    Hint(Mishal): All details of the pin exist here in global or local vars
+                    Hint: All details of the pin exist here in global or local vars
                     (pinId, imageUrl, title, description, keywordsString, likeCount, isLiked, aspectRatio, creatorId, creatorUsername, creatorPfpUrl, creationDate).
                     You can save them for local db in an object here (for when and if the user saves it to a board)(just insert the object).
                      */
@@ -535,9 +580,12 @@ class PinDetails : AppCompatActivity() {
 
                 Toast.makeText(this, "Action failed. Check internet.", Toast.LENGTH_SHORT).show()
             } else if (isLiked) {
-                // Success + Liked
-                //TODO(Mishal): Add (user_id, pin_id) to local pin_likes table (to show likes and liked state offline)(if you're doing that)
+                offlineDbHelper.addLikedPin(currentUserId, pinId)
                 sendLikeNotification()
+            } else {
+                // Success + Unliked: Remove from local DB
+                offlineDbHelper.removeLikedPin(currentUserId, pinId)
+
             }
         }
     }

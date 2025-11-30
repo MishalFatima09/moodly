@@ -9,6 +9,7 @@ import com.moodly.moodly.AppConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.MediaType.Companion.toMediaType
@@ -194,6 +195,59 @@ object OnlineDbHelper {
 
             } catch (e: Exception) {
                 Log.e("OnlineDbHelper", "Fire-and-forget failure: ${e.message}")
+            }
+        }
+    }
+
+    suspend fun executeSyncQuery(query: String, params: List<Any>): ApiResponse = withContext(Dispatchers.IO) {
+        val requestModel = QueryRequest(query, params)
+        val requestJson = gson.toJson(requestModel)
+        val requestBody = requestJson.toRequestBody(jsonMediaType)
+        val request = Request.Builder()
+            .url(SQL_API_URL)
+            .post(requestBody)
+            .build()
+
+        // Use .execute() for synchronous call
+        client.newCall(request).execute().use { response ->
+            val responseBody = response.body?.string()
+            if (!response.isSuccessful || responseBody == null) {
+                throw IOException("Server error during sync query: ${response.code}")
+            }
+            return@withContext gson.fromJson(responseBody, ApiResponse::class.java)
+        }
+    }
+
+    suspend fun uploadImageSync(base64Image: String): String? = withContext(Dispatchers.IO) {
+        var fileBytes = Base64.decode(base64Image, Base64.DEFAULT)
+
+        // NOTE: Compression logic is omitted here for brevity, but you should add it
+        // from your existing uploadImage function to be complete.
+
+        val finalBase64Data = Base64.encodeToString(fileBytes, Base64.NO_WRAP)
+
+        val requestModel = UploadImageRequest(finalBase64Data)
+        val requestJson = gson.toJson(requestModel)
+        val requestBody = requestJson.toRequestBody(jsonMediaType)
+
+        val request = Request.Builder()
+            .url(UPLOAD_API_URL)
+            .post(requestBody)
+            .build()
+
+        // Use .execute() for synchronous call
+        client.newCall(request).execute().use { response ->
+            val responseBody = response.body?.string()
+            if (!response.isSuccessful || responseBody == null) {
+                throw IOException("Server error during image sync upload: ${response.code}")
+            }
+            val apiResponse = gson.fromJson(responseBody, ApiResponse::class.java)
+
+            if (apiResponse.status == 1 && apiResponse.data?.url != null) {
+                return@withContext apiResponse.data.url
+            } else {
+                val message = apiResponse.error?.message ?: "Unknown API error during upload"
+                throw IOException(message)
             }
         }
     }

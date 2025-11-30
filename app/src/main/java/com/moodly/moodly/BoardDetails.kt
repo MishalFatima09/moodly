@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.moodly.moodly.Globals.scheduleSyncWorker
 
 class BoardDetails : AppCompatActivity() {
     // UI Elements
@@ -36,7 +37,7 @@ class BoardDetails : AppCompatActivity() {
     var boardTitleText : String = ""
     var boardDescriptionText : String = ""
     var boardPinCountText : String = ""
-
+    private lateinit var offlineDbHelper: OfflineDbHelper // Initialize the helper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,6 +56,9 @@ class BoardDetails : AppCompatActivity() {
             finish()
             return
         }
+
+        // Initialize Offline Helper
+        offlineDbHelper = OfflineDbHelper.getInstance(applicationContext)
 
         // get data from intent (coming from ADAPTER_Board)
         boardId = intent.getStringExtra("board_id") ?: ""
@@ -95,8 +99,9 @@ class BoardDetails : AppCompatActivity() {
             loadBoardPins()
         }
         else{
-            //TODO(Mishal): Load board pins from local db
-            Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
+            // DONE: Load board pins from local db
+            loadBoardPinsLocal()
+            Toast.makeText(this, "No internet connection. Showing saved pins.", Toast.LENGTH_SHORT).show()
         }
     }
     private fun setupRecyclerView()
@@ -120,6 +125,21 @@ class BoardDetails : AppCompatActivity() {
     private fun getSpanCount(): Int {
         return if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) 3 else 2
     }
+
+    // --- OFFLINE PIN LOADING ---
+    private fun loadBoardPinsLocal() {
+        try {
+            val localPins = offlineDbHelper.loadBoardPinsLocal(boardId)
+            pins.clear()
+            pins.addAll(localPins)
+            adapter.notifyDataSetChanged()
+            boardPinsCount.text = "${pins.size} Pins"
+        } catch (e: Exception) {
+            Toast.makeText(this, "Error loading local pins: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // --- ONLINE PIN LOADING ---
     private fun loadBoardPins() {
         // Get pin details WHERE the pin is linked to this board_id
         val query = """
@@ -152,6 +172,8 @@ class BoardDetails : AppCompatActivity() {
 
                         if (id.isNotEmpty()) {
                             pins.add(DATA_Pin(id, url, ratio))
+                            // Cache pin data locally upon successful retrieval (if not already there)
+                            offlineDbHelper.savePinDetails(id, url, ratio)
                         }
                     }
                 }
@@ -185,13 +207,34 @@ class BoardDetails : AppCompatActivity() {
                 Toast.makeText(this, "Board title cannot be empty", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
+            // Prepare payload for queuing
+            val payload = mapOf(
+                "board_id" to boardId,
+                "title" to newTitle,
+                "description" to newDesc
+            )
+            // Assuming Globals.gson is available for JSON serialization
+            val payloadJson = Globals.gson.toJson(payload)
+
+
             if(Globals.isInternetAvailable(this)) {
                 updateBoard(newTitle, newDesc, dialog)
             }
             else
             {
-                Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
-                //TODO(Mishal): Queue the board title+desc update for when online (and update in local db when success)
+                // DONE: Queue the board title+desc update for when online
+                offlineDbHelper.queueOfflineAction("BOARD_UPDATE", payloadJson)
+                scheduleSyncWorker(this)
+
+                // Optimistic UI Update
+                boardTitleText = newTitle
+                boardDescriptionText = newDesc
+                boardTitle.text = newTitle
+                boardDescription.text = newDesc
+
+                Toast.makeText(this, "Board update queued for sync.", Toast.LENGTH_LONG).show()
+                dialog.dismiss()
             }
         }
 
@@ -225,9 +268,10 @@ class BoardDetails : AppCompatActivity() {
 
                 // Update TextViews
                 boardTitle.text = newTitle
-                boardDescription.text = newDesc
+                boardDescription.text = if(newDesc.isEmpty()) "No description" else newDesc
 
-                //TODO(Mishal): Update board title+desc in local db (online update is success here)
+                // DONE: Update board title+desc in local db
+                offlineDbHelper.updateBoardDetails(boardId, newTitle, newDesc)
                 dialog.dismiss()
             } else {
                 Toast.makeText(this, "Failed to update: ${error?.message}", Toast.LENGTH_SHORT).show()
@@ -243,8 +287,22 @@ class BoardDetails : AppCompatActivity() {
                     removePinFromBoard(pin)
                 }
                 else {
-                    Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
-                    //TODO(Mishal): Queue the pin removal from board for when online (and update in local db when success)
+                    // OFFLINE: Queue the pin removal
+                    Toast.makeText(this, "No internet connection. Pin removal queued.", Toast.LENGTH_SHORT).show()
+
+                    // Prepare payload for queuing
+                    val payload = mapOf("board_id" to boardId, "pin_id" to pin.pinId)
+                    val payloadJson = Globals.gson.toJson(payload)
+
+                    // Queue the action
+                    offlineDbHelper.queueOfflineAction("BOARD_PIN_REMOVE", payloadJson)
+                    scheduleSyncWorker(this)
+
+                    // Optimistic UI update
+                    pins.remove(pin)
+                    adapter.notifyDataSetChanged()
+                    boardPinCountText = "${pins.size} Pins"
+                    boardPinsCount.text = boardPinCountText
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -262,6 +320,9 @@ class BoardDetails : AppCompatActivity() {
             }
             if (response?.status == 1) {
                 Toast.makeText(this, "Pin removed", Toast.LENGTH_SHORT).show()
+
+                // DONE: Update in local DB
+                offlineDbHelper.removePinBoardLink(boardId, pin.pinId)
 
                 // Refresh the list locally without reloading everything from net
                 pins.remove(pin)

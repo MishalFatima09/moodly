@@ -20,6 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.flexbox.FlexboxLayout
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.moodly.moodly.Globals.scheduleSyncWorker
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 
@@ -149,6 +150,53 @@ class CreatePin : AppCompatActivity() {
     }
 
 
+    // Inside the CreatePin class
+
+    private fun publishPinOffline() {
+        // 1. Prepare Pin data and Board data for the queue
+        val title = edittextTitle.text.toString().trim()
+        val description = edittextDescription.text.toString().trim()
+        val finalKeywords = keywords.joinToString("|")
+
+        // Calculate Aspect Ratio (Reusing your logic from insertPinToDatabase)
+        val aspectRatio = try {
+            val decodedBytes = android.util.Base64.decode(pinImageBase64, android.util.Base64.DEFAULT)
+            val options = android.graphics.BitmapFactory.Options()
+            options.inJustDecodeBounds = true
+            android.graphics.BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.size, options)
+
+            if (options.outWidth > 0) {
+                options.outHeight.toFloat() / options.outWidth.toFloat()
+            } else {
+                1.0f
+            }
+        } catch (e: Exception) {
+            1.0f
+        }
+
+        // 2. Create the complete payload
+        val payload = mapOf(
+            "user_id" to userId,
+            "title" to title,
+            "description" to description,
+            "keywords" to finalKeywords,
+            "image_base64" to pinImageBase64!!, // Must queue the raw image data for upload later
+            "aspect_ratio" to aspectRatio,
+            "board_id" to selectedBoardId // Will be null if no board is selected
+        )
+
+        val payloadJson = Globals.gson.toJson(payload)
+
+        val offlineDbHelper = OfflineDbHelper.getInstance(applicationContext)
+        offlineDbHelper.queueOfflineAction("PIN_CREATE", payloadJson)
+
+        scheduleSyncWorker(this)
+
+        Toast.makeText(this, "Pin saved offline. Syncing when online.", Toast.LENGTH_LONG).show()
+        finish() // Close the activity
+    }
+
+
     private fun setupPublishButton() {
         btnPublish.setOnClickListener {
             if (validatePinData()) {
@@ -156,7 +204,7 @@ class CreatePin : AppCompatActivity() {
                     uploadPin()
                 }
                 else {
-                    //TODO(Mishal): Queue pin upload for when online (and save pin to board if user selected a board)(in both local and online db)
+                    publishPinOffline()
                     Toast.makeText(this, "No internet connection.", Toast.LENGTH_SHORT).show()
                 }
             }
