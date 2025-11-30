@@ -101,6 +101,7 @@ class EditProfile : AppCompatActivity() {
         usernameInput.setText(username)
         nicknameInput.setText(fullName)
         emailInput.setText(email)
+        emailInput.isEnabled = false // Disable email editing
         phoneInput.setText(phone)
 
         // Load profile picture
