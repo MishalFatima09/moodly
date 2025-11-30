@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.moodly.moodly.Globals.scheduleSyncWorker
 
 class Boards : AppCompatActivity() {
     //UI
@@ -31,6 +32,7 @@ class Boards : AppCompatActivity() {
     //Data
     var boards = ArrayList<DATA_Board>()
     var currentUserId: String = ""
+    private lateinit var offlineDbHelper: OfflineDbHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,6 +51,8 @@ class Boards : AppCompatActivity() {
             finish()
             return
         }
+        offlineDbHelper = OfflineDbHelper.getInstance(applicationContext)
+
 
 
         //Initialize UI elements
@@ -66,12 +70,12 @@ class Boards : AppCompatActivity() {
         super.onStart()
         bottomNav.selectedItemId = R.id.nav_boards
         if(Globals.isInternetAvailable(this)) {
-            loadBoards()
+            loadBoards() // Online loading
         }
         else
         {
-            Toast.makeText(this, "No internet connection.", Toast.LENGTH_LONG).show()
-            //TODO(Mishal): Load board previews from local db
+            Toast.makeText(this, "No internet connection. Loading saved boards.", Toast.LENGTH_LONG).show()
+            loadBoardsLocal()
         }
     }
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -98,6 +102,7 @@ class Boards : AppCompatActivity() {
         }
         boards_rv.adapter = adapter
     }
+
     private fun showDeleteBoardDialog(board: DATA_Board) {
         //Delete board when a board is long pressed in the boards activity
         AlertDialog.Builder(this)
@@ -108,8 +113,21 @@ class Boards : AppCompatActivity() {
                     deleteBoard(board)
                 }
                 else {
-                    Toast.makeText(this, "No internet connection.", Toast.LENGTH_LONG).show()
-                    //TODO(Mishal): Queue board deletion for when online (and delete in local db when online success)
+                    // OFFLINE: Queue board deletion
+                    Toast.makeText(this, "No internet connection. Board deletion queued.", Toast.LENGTH_LONG).show()
+
+                    // Prepare payload for deletion
+                    val payload = mapOf("board_id" to board.board_id)
+                    val payloadJson = Globals.gson.toJson(payload)
+
+                    // Queue the action
+                    offlineDbHelper.queueOfflineAction("BOARD_DELETE", payloadJson)
+                    scheduleSyncWorker(this)
+
+                    // Immediately remove from local UI
+                    boards.remove(board)
+                    adapter.notifyDataSetChanged()
+                    updateEmptyState()
                 }
             }
             .setNegativeButton("Cancel", null)
@@ -134,12 +152,46 @@ class Boards : AppCompatActivity() {
             if (response?.status == 1) {
                 // Success
                 Toast.makeText(this, "Board deleted", Toast.LENGTH_SHORT).show()
+                offlineDbHelper.deleteBoardAndPins(board.board_id)
+
                 // Refresh the boards list
                 loadBoards()
-                //TODO(Mishal): Delete board from local db (in local db, make sure to have on_delete_cascade for board_pins table so all entries for that board are also deleted)(dont delete the pins themselves tho they might exist in some other offline board)
+
             } else {
                 Toast.makeText(this, "Failed to delete: ${error?.message}", Toast.LENGTH_SHORT).show()
             }
+        }
+    }
+
+    private fun updateEmptyState() {
+        if (boards.isEmpty()) {
+            nothingToShowText.visibility = View.VISIBLE
+            boards_rv.visibility = View.GONE
+        } else {
+            nothingToShowText.visibility = View.GONE
+            boards_rv.visibility = View.VISIBLE
+        }
+    }
+
+    // --- LOCAL DB LOADING ---
+    private fun loadBoardsLocal() {
+        boards_rv.visibility = View.GONE
+        nothingToShowText.visibility = View.GONE
+        progressBar.visibility = View.VISIBLE
+
+        try {
+            val localBoards = offlineDbHelper.loadUserBoards(currentUserId)
+            boards.clear()
+            boards.addAll(localBoards)
+            adapter.notifyDataSetChanged()
+
+            progressBar.visibility = View.GONE
+            updateEmptyState()
+
+        } catch (e: Exception) {
+            progressBar.visibility = View.GONE
+            nothingToShowText.visibility = View.VISIBLE
+            Toast.makeText(this, "Error loading local boards: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
     private fun loadBoards() {

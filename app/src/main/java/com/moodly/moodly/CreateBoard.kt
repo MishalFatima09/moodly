@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.moodly.moodly.Globals.scheduleSyncWorker
 
 class CreateBoard : AppCompatActivity() {
     //UI Elements
@@ -23,6 +24,7 @@ class CreateBoard : AppCompatActivity() {
 
     //Data
     var currentUserId: String = ""
+    private lateinit var offlineDbHelper: OfflineDbHelper
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +44,7 @@ class CreateBoard : AppCompatActivity() {
             finish()
             return
         }
+        offlineDbHelper = OfflineDbHelper.getInstance(applicationContext)
 
         //Initialize UI Elements
         backBtn = findViewById<ImageView>(R.id.btn_back)
@@ -69,6 +72,24 @@ class CreateBoard : AppCompatActivity() {
             finish()
         }
     }
+
+    private fun queueBoardCreationOffline(title: String, description: String) {
+        // 1. Prepare JSON Payload for the queue
+        val payload = mapOf(
+            "user_id" to currentUserId,
+            "title" to title,
+            "description" to description
+        )
+        val payloadJson = Globals.gson.toJson(payload)
+
+        offlineDbHelper.queueOfflineAction("BOARD_CREATE", payloadJson)
+
+        scheduleSyncWorker(this) // Assuming scheduleSyncWorker is a top-level function
+
+        Toast.makeText(this, "Board creation queued. Syncing when online.", Toast.LENGTH_LONG).show()
+        finish() // Close the activity
+    }
+
     private fun setupCreateBoardButton()
     {
         createBoardBtn.setOnClickListener {
@@ -88,8 +109,8 @@ class CreateBoard : AppCompatActivity() {
             }
             else
             {
+                queueBoardCreationOffline(title, description)
                 Toast.makeText(this, "No internet connection", Toast.LENGTH_SHORT).show()
-                //TODO(Mishal): queue board creation (and create in local db when successful online)
             }
 
         }
@@ -101,8 +122,10 @@ class CreateBoard : AppCompatActivity() {
         progressDialog.setCancelable(false)
         progressDialog.show()
 
-        val query = "INSERT INTO boards (user_id, title, description) VALUES (?, ?, ?)"
+        // Added RETURNING board_id to the query to get the new ID for local persistence
+        val query = "INSERT INTO boards (user_id, title, description) VALUES (?, ?, ?) RETURNING board_id"
         val params = listOf(currentUserId, title, description)
+
         OnlineDbHelper.executeQuery(query, params) { response, error ->
             progressDialog.dismiss()
             if(error != null)
@@ -112,13 +135,23 @@ class CreateBoard : AppCompatActivity() {
             }
             if(response?.status == 1)
             {
-                Toast.makeText(this, "Board created successfully", Toast.LENGTH_SHORT).show()
-                //TODO(Mishal): create board in local db (online is successful)
-                finish()
+                // Attempt to get the new board_id from the response rows
+                val newBoardId = response.data?.rows?.firstOrNull()?.get("board_id") as? String
+
+                if (newBoardId != null) {
+                    offlineDbHelper.addBoard(newBoardId, currentUserId, title, description)
+
+                    Toast.makeText(this, "Board created successfully", Toast.LENGTH_SHORT).show()
+                    finish()
+                } else {
+                    // This indicates a successful INSERT, but the RETURNING clause failed to provide the ID
+                    Toast.makeText(this, "Board created (ID not returned). Please refresh.", Toast.LENGTH_SHORT).show()
+                    finish()
+                }
             }
             else
             {
-                Toast.makeText(this, "Failed to create board", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Failed to create board: ${response?.error?.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
