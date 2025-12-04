@@ -101,7 +101,6 @@ class BoardDetails : AppCompatActivity() {
         else{
             // DONE: Load board pins from local db
             loadBoardPinsLocal()
-            Toast.makeText(this, "No internet connection. Showing saved pins.", Toast.LENGTH_SHORT).show()
         }
     }
     private fun setupRecyclerView()

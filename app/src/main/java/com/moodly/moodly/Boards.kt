@@ -74,7 +74,6 @@ class Boards : AppCompatActivity() {
         }
         else
         {
-            Toast.makeText(this, "No internet connection. Loading saved boards.", Toast.LENGTH_LONG).show()
             loadBoardsLocal()
         }
     }
