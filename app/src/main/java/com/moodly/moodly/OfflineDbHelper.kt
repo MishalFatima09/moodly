@@ -12,36 +12,42 @@ class OfflineDbHelper private constructor(context: Context) :
     // --- Companion Object / Constants ---
     companion object {
         private const val DATABASE_NAME = "MoodlyOffline.db"
-        private const val DATABASE_VERSION = 1
+        // CRITICAL FIX: Version incremented to 4 to force schema update.
+        private const val DATABASE_VERSION = 4
         private const val TAG = "OfflineDbHelper"
 
         // Table and Column Names
-        // 1. PIN_LIKES table (to track current user's liked pins for offline UI)
-        private const val TABLE_LIKES = "pin_likes"
+        // Common
         private const val COL_USER_ID = "user_id"
         private const val COL_PIN_ID = "pin_id"
+        private const val COL_BOARD_ID = "board_id"
+
+        // 1. PIN_LIKES
+        private const val TABLE_LIKES = "pin_likes"
         private const val COL_LIKED_AT = "liked_at"
 
-        // 2. OFFLINE_ACTIONS table (for queuing sync operations)
+        // 2. OFFLINE_ACTIONS
         private const val TABLE_ACTIONS = "offline_actions"
         private const val COL_ACTION_ID = "action_id"
         private const val COL_ACTION_TYPE = "action_type"
         private const val COL_ACTION_PAYLOAD = "payload_json"
         private const val COL_ACTION_TIMESTAMP = "timestamp"
 
-        // 3. BOARD_PINS table (to track local pin-board links for offline visibility)
-        private const val TABLE_BOARD_PINS = "board_pins" // Use constant here
-        private const val COL_BOARD_ID = "board_id" // New column constant
+        // 3. BOARD_PINS
+        private const val TABLE_BOARD_PINS = "board_pins"
 
+        // 4. BOARDS
         private const val TABLE_BOARDS = "boards"
         private const val COL_TITLE = "title"
         private const val COL_DESCRIPTION = "description"
         private const val COL_COVER_URL = "cover_image_url"
         private const val COL_CREATED_AT = "created_at"
 
+        // 5. PINS (Constants FIX: Added metadata)
         private const val TABLE_PINS = "pins"
         private const val COL_IMAGE_URL = "image_url"
         private const val COL_ASPECT_RATIO = "aspect_ratio"
+        private const val COL_KEYWORDS = "keywords" // FIX: Added missing constant
 
 
         @Volatile
@@ -101,9 +107,13 @@ class OfflineDbHelper private constructor(context: Context) :
     """.trimIndent()
         db.execSQL(CREATE_BOARDS_TABLE)
 
+        // 5. Create PINS table (FIX: Added metadata columns needed by helper functions)
         val CREATE_PINS_TABLE = """
             CREATE TABLE $TABLE_PINS (
                 $COL_PIN_ID TEXT PRIMARY KEY,
+                $COL_TITLE TEXT,         
+                $COL_DESCRIPTION TEXT,   
+                $COL_KEYWORDS TEXT,      
                 $COL_IMAGE_URL TEXT NOT NULL,
                 $COL_ASPECT_RATIO REAL DEFAULT 1.0
             )
@@ -121,7 +131,15 @@ class OfflineDbHelper private constructor(context: Context) :
         onCreate(db)
     }
 
-    fun savePinDetails(pinId: String, imageUrl: String, aspectRatio: Float) {
+
+    // --- PIN METADATA FUNCTIONS ---
+
+    /**
+     * Saves full pin data required for local display and offline editing.
+     * This is the function called by SyncWorker and PinDetails.fetchPinDetails().
+     */
+
+        fun savePinDetails(pinId: String, imageUrl: String, aspectRatio: Float) {
         val db = this.writableDatabase
         val values = ContentValues().apply {
             put(COL_PIN_ID, pinId)
@@ -131,6 +149,82 @@ class OfflineDbHelper private constructor(context: Context) :
         // Use REPLACE to update existing pins (like if the aspect ratio was wrong)
         db.insertWithOnConflict(TABLE_PINS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
     }
+
+
+
+
+//    fun saveFullPinMetadata(
+//        pinId: String,
+//        title: String,
+//        description: String,
+//        keywords: String,
+//        imageUrl: String,
+//        aspectRatio: Float
+//    ) {
+//        val db = this.writableDatabase
+//        val values = ContentValues().apply {
+//            put(COL_PIN_ID, pinId)
+//            put(COL_TITLE, title)
+//            put(COL_DESCRIPTION, description)
+//            put(COL_KEYWORDS, keywords)
+//            put(COL_IMAGE_URL, imageUrl)
+//            put(COL_ASPECT_RATIO, aspectRatio)
+//        }
+//        // Use REPLACE to ensure pins are updated if fetched multiple times
+//        db.insertWithOnConflict(TABLE_PINS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
+//        Log.d(TAG, "Full local pin metadata saved/updated: $pinId")
+//    }
+
+    /**
+     * IMPLEMENTS: Updates the title and description of a pin in the local DB
+     * (Called by SyncWorker after PIN_UPDATE success).
+     */
+    fun updateLocalPinDetails(pinId: String, newTitle: String, newDescription: String) {
+        val db = this.writableDatabase
+        val values = ContentValues().apply {
+            put(COL_TITLE, newTitle)
+            put(COL_DESCRIPTION, newDescription)
+        }
+        db.update(
+            TABLE_PINS,
+            values,
+            "$COL_PIN_ID = ?",
+            arrayOf(pinId)
+        )
+        Log.d(TAG, "Local pin details updated for: $pinId")
+    }
+
+    /**
+     * IMPLEMENTS: Retrieves the full metadata for a pin from the local cache.
+     * (Used by PinDetails.loadPinDetailsLocal to show data offline).
+     */
+    fun getFullLocalPinDetails(pinId: String): Map<String, String>? {
+        val db = this.readableDatabase
+        val cursor = db.query(
+            TABLE_PINS,
+            arrayOf(COL_PIN_ID, COL_TITLE, COL_DESCRIPTION, COL_KEYWORDS, COL_IMAGE_URL, COL_ASPECT_RATIO),
+            "$COL_PIN_ID = ?",
+            arrayOf(pinId),
+            null, null, null
+        )
+
+        var details: Map<String, String>? = null
+
+        if (cursor.moveToFirst()) {
+            details = mapOf(
+                Pair("pin_id", cursor.getString(cursor.getColumnIndexOrThrow(COL_PIN_ID))),
+                Pair("title", cursor.getString(cursor.getColumnIndexOrThrow(COL_TITLE)) ?: ""),
+                Pair("description", cursor.getString(cursor.getColumnIndexOrThrow(COL_DESCRIPTION)) ?: ""),
+                Pair("keywords", cursor.getString(cursor.getColumnIndexOrThrow(COL_KEYWORDS)) ?: ""),
+                Pair("image_url", cursor.getString(cursor.getColumnIndexOrThrow(COL_IMAGE_URL))),
+                // Hardcoded string must also be a Pair to maintain Map<String, String> consistency
+                Pair("user_id", "MOCK_CREATOR_ID")
+            )
+        }
+        cursor.close()
+        return details
+    }
+
 
     /**
      * Loads all pin previews associated with a specific board ID from local storage.
@@ -161,15 +255,16 @@ class OfflineDbHelper private constructor(context: Context) :
         return pinsList
     }
 
-    // --- BOARD Management Functions (Existing/Updated) ---
+    // --- BOARD Management Functions ---
 
-    fun addBoard(boardId: String, userId: String, title: String, description: String, createdAt: Long = System.currentTimeMillis() / 1000) {
+    fun addBoard(boardId: String, userId: String, title: String, description: String, coverUrl: String = "", createdAt: Long = System.currentTimeMillis() / 1000) {
         val db = this.writableDatabase
         val values = ContentValues().apply {
             put(COL_BOARD_ID, boardId)
             put(COL_USER_ID, userId)
             put(COL_TITLE, title)
             put(COL_DESCRIPTION, description)
+            put(COL_COVER_URL, coverUrl)
             put(COL_CREATED_AT, createdAt)
         }
         db.insertWithOnConflict(TABLE_BOARDS, null, values, SQLiteDatabase.CONFLICT_REPLACE)
@@ -194,34 +289,54 @@ class OfflineDbHelper private constructor(context: Context) :
         Log.d(TAG, "Local board details updated for: $boardId")
     }
 
+
+    // Inside OfflineDbHelper.kt class
+
+    /**
+     * Loads a list of boards created by the specified user for offline viewing,
+     * including the pin count and the cover image URL from the first saved pin.
+     */
     fun loadUserBoards(userId: String): List<DATA_Board> {
         val boardsList = mutableListOf<DATA_Board>()
         val db = this.readableDatabase
 
-        val query = """
-            SELECT 
-                b.$COL_BOARD_ID, 
-                b.$COL_TITLE, 
-                b.$COL_DESCRIPTION, 
-                b.$COL_COVER_URL, 
-                COUNT(bp.$COL_PIN_ID) as pin_count
-            FROM $TABLE_BOARDS b
-            LEFT JOIN $TABLE_BOARD_PINS bp ON b.$COL_BOARD_ID = bp.$COL_BOARD_ID
-            WHERE b.$COL_USER_ID = ?
-            GROUP BY b.$COL_BOARD_ID, b.$COL_TITLE, b.$COL_DESCRIPTION, b.$COL_COVER_URL
-            ORDER BY b.$COL_CREATED_AT DESC
-        """
-        val cursor = db.rawQuery(query, arrayOf(userId))
+        val simpler_query = """
+        SELECT
+            b.$COL_BOARD_ID,
+            b.$COL_TITLE,
+            b.$COL_DESCRIPTION,
+            b.$COL_COVER_URL,
+            
+            -- Subquery to find the image_url of the very first pin saved to this board
+            (SELECT p.$COL_IMAGE_URL
+             FROM $TABLE_BOARD_PINS sub_bp
+             JOIN $TABLE_PINS p ON sub_bp.$COL_PIN_ID = p.$COL_PIN_ID
+             WHERE sub_bp.$COL_BOARD_ID = b.$COL_BOARD_ID
+             ORDER BY sub_bp.rowid ASC 
+             LIMIT 1) AS first_pin_image_url,
+             
+            (SELECT COUNT(*) FROM $TABLE_BOARD_PINS sub_bp WHERE sub_bp.$COL_BOARD_ID = b.$COL_BOARD_ID) AS pin_count
+
+        FROM $TABLE_BOARDS b
+        WHERE b.$COL_USER_ID = ?
+        ORDER BY b.$COL_CREATED_AT DESC
+    """
+
+        val cursor = db.rawQuery(simpler_query, arrayOf(userId))
 
         with(cursor) {
             while (moveToNext()) {
                 val boardId = getString(getColumnIndexOrThrow(COL_BOARD_ID))
                 val title = getString(getColumnIndexOrThrow(COL_TITLE))
                 val description = getString(getColumnIndexOrThrow(COL_DESCRIPTION))
-                val coverUrl = getString(getColumnIndexOrThrow(COL_COVER_URL)) ?: ""
+                val explicitCoverUrl = getString(getColumnIndexOrThrow(COL_COVER_URL)) ?: ""
+                val firstPinUrl = getString(getColumnIndexOrThrow("first_pin_image_url")) ?: ""
                 val pinCount = getInt(getColumnIndexOrThrow("pin_count"))
 
-                boardsList.add(DATA_Board(boardId, coverUrl, title, description, pinCount))
+                // Determine the final cover: use explicit cover > use first pin image > use empty string
+                val finalCover = if (explicitCoverUrl.isNotEmpty()) explicitCoverUrl else firstPinUrl
+
+                boardsList.add(DATA_Board(boardId, finalCover, title, description, pinCount))
             }
         }
         cursor.close()
@@ -279,34 +394,6 @@ class OfflineDbHelper private constructor(context: Context) :
         )
         Log.d(TAG, "Removed $rowsDeleted link(s) locally: $pinId from $boardId")
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
     // --- PIN_LIKES Management Functions---
@@ -408,3 +495,39 @@ class OfflineDbHelper private constructor(context: Context) :
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

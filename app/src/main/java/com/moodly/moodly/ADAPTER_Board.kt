@@ -29,19 +29,33 @@ class ADAPTER_Board(private val boards: List<DATA_Board>,
         val board = boards[position]
         holder.name.text = board.title
         holder.count.text = board.pinCount.toString()
-        if(board.coverImageUrl.isNotEmpty())
+
+        val context = holder.itemView.context
+        val isOnline = Globals.isInternetAvailable(context) // Check network status
+
+        // --- CRITICAL OFFLINE IMAGE FIX ---
+        if (board.coverImageUrl.isNotEmpty())
         {
-            Glide.with(holder.itemView.context)
+            val glideRequest = Glide.with(context)
                 .load(board.coverImageUrl)
                 .centerCrop()
                 .placeholder(R.color.black)
                 .error(R.drawable.empty_placeholder)
-                .into(holder.coverImg)
+
+            if (!isOnline) {
+                // If offline, tell Glide to ONLY look in its local disk cache.
+                // This prevents the java.net.SocketException.
+                glideRequest.onlyRetrieveFromCache(true)
+            }
+
+            glideRequest.into(holder.coverImg)
         }
         else
         {
+            // If there's no URL (either online or offline), show the empty placeholder.
             holder.coverImg.setImageResource(R.drawable.empty_placeholder)
         }
+
         // Go to board details on click
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context

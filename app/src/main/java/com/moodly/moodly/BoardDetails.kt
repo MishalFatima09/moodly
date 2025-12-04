@@ -172,7 +172,9 @@ class BoardDetails : AppCompatActivity() {
                         if (id.isNotEmpty()) {
                             pins.add(DATA_Pin(id, url, ratio))
                             // Cache pin data locally upon successful retrieval (if not already there)
-                            offlineDbHelper.savePinDetails(id, url, ratio)
+                             offlineDbHelper.savePinDetails(id, url, ratio)
+
+
                         }
                     }
                 }
