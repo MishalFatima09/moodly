@@ -113,11 +113,11 @@ class Profile : AppCompatActivity() {
         if (!profilePicUrl.isNullOrEmpty()) {
             Glide.with(this)
                 .load(profilePicUrl)
-                .placeholder(R.drawable.dp)
-                .error(R.drawable.dp)
+                .placeholder(R.drawable.pfp_placeholder)
+                .error(R.drawable.pfp_placeholder)
                 .into(profileImage)
         } else {
-            profileImage.setImageResource(R.drawable.dp)
+            profileImage.setImageResource(R.drawable.pfp_placeholder)
         }
     }
 
@@ -287,13 +287,13 @@ class Profile : AppCompatActivity() {
 
         // Load saved pins from board_pins joined with pins table
         val query = """
-            SELECT DISTINCT p.pin_id, p.image_url, p.aspect_ratio, p.title, p.description, p.keywords
-            FROM pins p
-            INNER JOIN board_pins bp ON p.pin_id = bp.pin_id
-            INNER JOIN boards b ON bp.board_id = b.board_id
-            WHERE b.user_id = ?
-            ORDER BY bp.created_at DESC
-            LIMIT 100
+        SELECT p.pin_id, p.image_url, p.aspect_ratio, p.title, p.description, p.keywords, bp.saved_at
+        FROM pins p
+        INNER JOIN board_pins bp ON p.pin_id = bp.pin_id
+        INNER JOIN boards b ON bp.board_id = b.board_id
+        WHERE b.user_id = ?
+        ORDER BY bp.saved_at DESC
+        LIMIT 100
         """.trimIndent()
         val params = listOf(user_id)
 
